@@ -1,0 +1,23 @@
+{
+  "name": "expressdemo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": "12.17.x"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bufferutil": "^4.0.4",
+    "express": "^4.17.1",
+    "node-gmail-api": "^1.0.0",
+    "passport-google-oauth20": "^2.0.0",
+    "utf-8-validate": "^5.0.6",
+    "ws": "^8.2.2"
+  }
+}
