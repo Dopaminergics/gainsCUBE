@@ -225,7 +225,14 @@ socketSignals.on("signals", async (signal) => {
 
         console.log("There is already an active position on this pair.");
         return;
-    }    
+    }    else if ( activePositions[p] === false) {
+	
+	    if (openTrade === false) {
+		console.log("Tried to close a position, but there wasn't one.");
+		    return;    
+	    }
+	    
+    }
 
     console.log(prices);
     console.log(prices[0][19]);
