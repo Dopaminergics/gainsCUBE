@@ -496,7 +496,7 @@ let tokenBalance = 0;
 
 
 async function updateBalance() {
-    _tokenBalance = await tokenContract.methods.balanceOf("0x41f4C1E74bdEeeF44f2A371Be932b729f329AAbB").call();
+    _tokenBalance = await tokenContract.methods.balanceOf(process.env.PUBLIC_KEY).call();
 
     console.log(_tokenBalance);
 
