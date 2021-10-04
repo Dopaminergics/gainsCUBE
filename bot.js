@@ -51,42 +51,6 @@ if(!process.env.WSS_URLS || !process.env.PRICES_URL || !process.env.TRADING_ADDR
 	process.exit();
 }
 
-// async function checkLinkAllowance(){
-// 	web3[selectedProvider].eth.net.isListening().then(async () => {
-// 		const allowance = await linkContract.methods.allowance(process.env.PUBLIC_KEY, process.env.TRADING_ADDRESS).call();
-// 		if(parseFloat(allowance) > 0){
-// 			allowedLink = true;
-// 			console.log("LINK allowance OK.");
-// 		}else{
-// 			console.log("LINK not allowed, approving now.");
-			
-// 			const tx = {
-// 				from: process.env.PUBLIC_KEY,
-// 			    to : process.env.LINK_ADDRESS,
-// 			    data : linkContract.methods.approve(process.env.TRADING_ADDRESS, "115792089237316195423570985008687907853269984665640564039457584007913129639935").encodeABI(),
-// 			    gasPrice: web3[selectedProvider].utils.toHex("20000000000"),
-// 			    gas: web3[selectedProvider].utils.toHex("100000")
-// 			};
-
-// 			web3[selectedProvider].eth.accounts.signTransaction(tx, process.env.PRIVATE_KEY).then(signed => {
-// 			    web3[selectedProvider].eth.sendSignedTransaction(signed.rawTransaction)
-// 			    .on('receipt', () => {
-// 					console.log("LINK successfully approved.");
-// 					allowedLink = true;
-// 			    }).on('error', (e) => {
-// 			    	console.log("LINK approve tx fail (" + e + ")");
-// 					setTimeout(() => { checkLinkAllowance(); }, 2*1000);
-// 			    });
-// 			}).catch(e => {
-// 				console.log("LINK approve tx fail (" + e + ")");
-// 				setTimeout(() => { checkLinkAllowance(); }, 2*1000);
-// 			});
-// 		}
-// 	}).catch(() => {
-// 		setTimeout(() => { checkLinkAllowance(); }, 5*1000);
-// 	});
-// }
-
 // -----------------------------------------
 // 4. WEB3 PROVIDER
 // -----------------------------------------
@@ -111,9 +75,7 @@ function selectProvider(n){
     tokenContract = new web3[n].eth.Contract(TOKEN_ABI, process.env.TOKEN_ADDRESS);
 
     updateBalance();
-	// fetchTradingVariables();
-	// fetchOpenTrades();
-	// watchLiveTradingEvents();
+
 }
 
 const getProvider = (wssId) => {
@@ -207,282 +169,10 @@ setInterval(() => {
 	console.log("Current WSS: " + WSS_URLS[selectedProvider]);
 }, 120*1000);
 
-// -----------------------------------------
-// 5. FETCH PAIRS, NFTS, AND NFT TIMELOCK
-// -----------------------------------------
-
-// async function fetchTradingVariables(){
-// 	web3[selectedProvider].eth.net.isListening().then(async () => {
-// 		const nftSuccessTimelock = await aggregatorContract.methods.nftSuccessTimelock().call();
-// 		const pairsCount = await aggregatorContract.methods.pairsCount().call();
-// 		nfts = [];
-
-// 		const nftsCount1 = await nftContract1.methods.balanceOf(process.env.PUBLIC_KEY).call();
-// 		const nftsCount2 = await nftContract2.methods.balanceOf(process.env.PUBLIC_KEY).call();
-// 		const nftsCount3 = await nftContract3.methods.balanceOf(process.env.PUBLIC_KEY).call();
-// 		const nftsCount4 = await nftContract4.methods.balanceOf(process.env.PUBLIC_KEY).call();
-// 		const nftsCount5 = await nftContract5.methods.balanceOf(process.env.PUBLIC_KEY).call();
-
-// 		for(var i = 0; i < nftsCount1; i++){
-// 			const id = await nftContract1.methods.tokenOfOwnerByIndex(process.env.PUBLIC_KEY, i).call();
-// 			nfts.push({id: id, type: 1});
-// 		}
-// 		for(var i = 0; i < nftsCount2; i++){
-// 			const id = await nftContract2.methods.tokenOfOwnerByIndex(process.env.PUBLIC_KEY, i).call();
-// 			nfts.push({id: id, type: 2});
-// 		}
-// 		for(var i = 0; i < nftsCount3; i++){
-// 			const id = await nftContract3.methods.tokenOfOwnerByIndex(process.env.PUBLIC_KEY, i).call();
-// 			nfts.push({id: id, type: 3});
-// 		}
-// 		for(var i = 0; i < nftsCount4; i++){
-// 			const id = await nftContract4.methods.tokenOfOwnerByIndex(process.env.PUBLIC_KEY, i).call();
-// 			nfts.push({id: id, type: 4});
-// 		}
-// 		for(var i = 0; i < nftsCount5; i++){
-// 			const id = await nftContract5.methods.tokenOfOwnerByIndex(process.env.PUBLIC_KEY, i).call();
-// 			nfts.push({id: id, type: 5});
-// 		}
-
-// 		let pairsPromises = [];
-// 		for(var i = 0; i < pairsCount; i++){
-// 			pairsPromises.push(aggregatorContract.methods.pairs(i).call());
-// 		}
-
-// 		Promise.all(pairsPromises).then((s) => {
-// 			pairs = [];
-// 			for(var j = 0; j < s.length; j++){
-// 				pairs.push(s[j]);
-// 			}
-// 			nftTimelock = nftSuccessTimelock;
-// 			console.log("Fetched trading variables.");
-// 		});
-// 	}).catch(() => {
-// 		setTimeout(() => { fetchTradingVariables(); }, 2*1000);
-// 	});
-// }
-
-// setInterval(() => {
-// 	fetchTradingVariables();
-// 	fetchOpenTrades();
-// }, 2440*60*1000);
-
-// -----------------------------------------
-// 6. SELECT NFT TO EXECUTE ORDERS
-// -----------------------------------------
-
-// async function selectNft(){
-// 	return new Promise(async resolve => {
-// 		if(nftTimelock === undefined || nfts.length === 0){ resolve(null); return; }
-		
-// 		web3[selectedProvider].eth.net.isListening().then(async () => {
-// 			const currentBlock = await web3[selectedProvider].eth.getBlockNumber();
-
-// 			for(var i = 0; i < nfts.length; i++){
-// 				const lastSuccess = await tradingContract.methods.nftLastSuccess(nfts[i].id).call();
-// 				if(parseFloat(currentBlock) - parseFloat(lastSuccess) >= nftTimelock
-// 				&& !nftsBeingUsed.includes(nfts[i].id)){
-// 					console.log("Selected NFT #" + nfts[i].id);
-// 					resolve(nfts[i]);
-// 					return;
-// 				}
-// 			}
-
-// 			console.log("No suitable NFT to select.");
-// 			resolve(null);
-
-// 		}).catch(() => {
-// 			resolve(null);
-// 		});
-// 	});
-// }
-
-// -----------------------------------------
-// 7. LOAD OPEN TRADES
-// -----------------------------------------
-
-// async function fetchOpenTrades(){
-// 	web3[selectedProvider].eth.net.isListening().then(async () => {
-// 		if(pairs.length === 0){
-// 			setTimeout(() => { fetchOpenTrades(); }, 2*1000);
-// 			return;
-// 		}
-// 		const openLimitOrdersCount = await tradingContract.methods.openLimitOrdersCount().call();
-// 		let promisesPairTradersArray = [], promisesTrades = [];
-
-// 		for(var i = 0; i < pairs.length; i++){
-// 			promisesPairTradersArray.push(tradingContract.methods.pairTradersArray(i).call());
-// 		}
-
-// 		Promise.all(promisesPairTradersArray).then(async (r) => {
-// 			for(var j = 0; j < r.length; j ++){
-// 				for(var a = 0; a < r[j].length; a++){
-// 					for(var b = 0; b < 3; b++){
-// 						promisesTrades.push(tradingContract.methods.userTrades(r[j][a], j, b).call());
-// 					}
-// 				}
-// 			}
-
-// 			for(var l = 0; l < parseFloat(openLimitOrdersCount); l++){
-// 				promisesTrades.push(tradingContract.methods.openLimitOrders(l).call());
-// 			}
-
-// 			Promise.all(promisesTrades).then((t) => {
-// 				openTrades = [];
-// 				for(var j = 0; j < t.length; j++){
-// 					if(t[j].leverage.toString() === "0"){ continue; }
-// 					openTrades.push(t[j]);
-// 				}
-// 				console.log("Fetched open trades: " + openTrades.length);
-// 			});
-// 		});
-// 	}).catch(() => {
-// 		setTimeout(() => { fetchOpenTrades(); }, 2*1000);
-// 	});
-// }
-
-// -----------------------------------------
-// 8. WATCH TRADING EVENTS
-// -----------------------------------------
-
-// function watchLiveTradingEvents(){
-// 	web3[selectedProvider].eth.net.isListening().then(async () => {
-// 		if(eventSubscription !== null){ return; }
-// 		eventSubscription = tradingContract.events.allEvents({ fromBlock: 'latest' }).on('data', function (event){
-// 			const eventName = event.event.toString();
-
-// 			if(eventName !== "TradeOpenedMarket" && eventName !== "TradeCanceledMarket"
-// 			&& eventName !== "TradeClosedMarket" && eventName !== "TradeLimitExecuted"
-// 			&& eventName !== "TpSlUpdated" && eventName !== "TradeLimitOpened"
-// 			&& eventName !== "TradeLimitCanceled"){
-// 				return;
-// 			}
-
-// 			event.triedTimes = 1;
-
-// 			setTimeout(() => {
-// 				refreshOpenTrades(event);
-// 			}, process.env.EVENT_CONFIRMATIONS_SEC*1000);
-// 		});
-
-// 		console.log("Watching trading events");
-// 	}).catch(() => {
-// 		setTimeout(() => { watchLiveTradingEvents(); }, 2*1000);
-// 	});
-// }
-
-// -----------------------------------------
-// 9. REFRESH INTERNAL OPEN TRADES LIST
-// -----------------------------------------
-
-// async function refreshOpenTrades(event){
-// 	web3[selectedProvider].eth.net.isListening().then(async () => {
-// 		const eventName = event.event.toString();
-// 		let failed = false;
-
-// 		if(eventName === "TradeLimitCanceled" || (eventName === "TradeLimitExecuted" && event.returnValues.orderType.toString() === "4")){
-// 			const hasLimitOrder = await tradingContract.methods.hasOpenLimitOrder(event.returnValues.trader, event.returnValues.pairIndex).call();
-
-// 			if(hasLimitOrder.toString() === "false"){
-// 				for(var i = 0; i < openTrades.length; i++){
-// 					if(openTrades[i].trader === event.returnValues.trader && openTrades[i].pairIndex === event.returnValues.pairIndex
-// 					&& openTrades[i].hasOwnProperty('minPrice')){
-// 						openTrades[i] = openTrades[openTrades.length-1];
-// 						openTrades.pop();
-// 						console.log("Watch events ("+eventName+"): Removed limit");
-// 						break;
-// 					}
-// 				}
-// 			}else{
-// 				failed = true;
-// 			}
-// 		}
-// 		if(eventName === "TradeLimitOpened"){
-// 			const hasLimitOrder = await tradingContract.methods.hasOpenLimitOrder(event.returnValues.trader, event.returnValues.pairIndex).call();
-
-// 			if(hasLimitOrder.toString() === "true"){
-// 				const id = await tradingContract.methods.userOpenLimitOrderId(event.returnValues.trader, event.returnValues.pairIndex).call();
-// 				const limit = await tradingContract.methods.openLimitOrders(id).call();
-// 				let found = false;
-
-// 				for(var i = 0; i < openTrades.length; i++){
-// 					if(openTrades[i].trader === event.returnValues.trader && openTrades[i].pairIndex === event.returnValues.pairIndex
-// 					&& openTrades[i].hasOwnProperty('minPrice')){
-// 						openTrades[i] = limit;
-// 						found = true;
-// 						console.log("Watch events ("+eventName+"): Updated limit");
-// 						break;
-// 					}
-// 				}
-
-// 				if(!found){ 
-// 					openTrades.push(limit); 
-// 					console.log("Watch events ("+eventName+"): Added limit");
-// 				}
-// 			}else{
-// 				failed = true;
-// 			}
-// 		}
-// 		if(eventName === "TradeOpenedMarket" || (eventName === "TradeLimitExecuted" && event.returnValues.orderType.toString() === "4")
-// 		|| eventName === "TpSlUpdated"){
-// 			const trade = await tradingContract.methods.userTrades(event.returnValues.trader, event.returnValues.pairIndex, event.returnValues.userTradesIndex).call();
-			
-// 			if(parseFloat(trade.leverage) > 0){
-// 				let found = false;
-
-// 				for(var i = 0; i < openTrades.length; i++){
-// 					if(openTrades[i].trader === event.returnValues.trader && openTrades[i].pairIndex === event.returnValues.pairIndex
-// 					&& openTrades[i].userTradesIndex === event.returnValues.userTradesIndex && openTrades[i].hasOwnProperty('openPrice')){
-// 						openTrades[i] = trade;
-// 						found = true;
-// 						console.log("Watch events ("+eventName+"): Updated trade");
-// 						break;
-// 					}
-// 				}
-
-// 				if(!found){ 
-// 					openTrades.push(trade); 
-// 					console.log("Watch events ("+eventName+"): Stored trade");
-// 				}
-// 			}else{
-// 				failed = true;
-// 			}
-// 		}
-// 		if((eventName === "TradeClosedMarket") || (eventName === "TradeLimitExecuted" && event.returnValues.orderType !== "4")){
-// 			const trade = await tradingContract.methods.userTrades(event.returnValues.trader, event.returnValues.pairIndex, event.returnValues.userTradesIndex).call();
-
-// 			if(parseFloat(trade.leverage) === 0){
-// 				for(var i = 0; i < openTrades.length; i++){
-// 					if(openTrades[i].trader === event.returnValues.trader && openTrades[i].pairIndex === event.returnValues.pairIndex
-// 					&& openTrades[i].userTradesIndex === event.returnValues.userTradesIndex && openTrades[i].hasOwnProperty('openPrice')){
-// 						openTrades[i] = openTrades[openTrades.length-1];
-// 						openTrades.pop();
-// 						console.log("Watch events ("+eventName+"): Removed trade");
-// 						break;
-// 					}
-// 				}
-// 			}else{
-// 				failed = true;
-// 			}
-// 		}
-// 		if(failed){
-// 			if(event.triedTimes == 10){ return; }
-// 			event.triedTimes ++;
-// 			setTimeout(() => {
-// 				refreshOpenTrades(event);
-// 			}, process.env.EVENT_CONFIRMATIONS_SEC*1000);
-// 			console.log("Watch events ("+eventName+"): Trade not found on the blockchain, trying again in "+process.env.EVENT_CONFIRMATIONS_SEC+" seconds.");
-// 		}else if(eventName === "TradeLimitExecuted" || eventName === "TradeOpenedMarket" || eventName === "TradeClosedMarket"){
-// 			const pair = await aggregatorContract.methods.pairs(event.returnValues.pairIndex).call();
-// 			pairs[event.returnValues.pairIndex].openInterestToken = pair.openInterestToken;
-// 			console.log("Refreshed pair "+ event.returnValues.pairIndex +" current open interest: " + Number(pair.openInterestToken/1e18).toFixed(2));
-// 		}
-// 	}).catch(() => { console.log("Error, WSS not connected."); });
-// }
 
 // ---------------------------------------------
-// 10. FETCH CURRENT PRICES & TRIGGER ORDERS
-// // ---------------------------------------------
+// 4. FETCH CURRENT PRICES & CHECK USER GFARM2 BALANCE
+//  ---------------------------------------------
 
 socket.on("prices", async (p) => {
 
@@ -497,13 +187,14 @@ let tokenBalance = 0;
 
 async function updateBalance() {
     _tokenBalance = await tokenContract.methods.balanceOf(process.env.PUBLIC_KEY).call();
-
-    console.log(_tokenBalance);
-
-    console.log("The token balance is:" + util.inspect(_tokenBalance) );
-    // console.log("The token balance is:" + web3[selectedProvider].utils.fromWei(toString(_tokenBalance), "ether"))
+    console.log("The GFARM2 token balance is:" + web3[selectedProvider].utils.fromWei(_tokenBalance, "ether" ));
     tokenBalance = parseInt(_tokenBalance);
 }
+
+
+// ---------------------------------------------
+// 5. TRIGGER ORDERS
+//  ---------------------------------------------
 
 
 // Active Positions Array
@@ -602,10 +293,7 @@ socketSignals.on("signals", async (signal) => {
                         activePositions.splice(p, 1, false);
                         console.log("Active position at pair " + p + "? " + activePositions[p])
                     }
-						// setTimeout(() => {
-						// 	ordersTriggered = ordersTriggered.filter(item => JSON.stringify(item) !== JSON.stringify({trade:orderInfo.trade, orderType: orderInfo.type}));
-						// 	nftsBeingUsed = nftsBeingUsed.filter(item => item !== orderInfo.nftId);
-						// }, process.env.TRIGGER_TIMEOUT*1000);
+						
 				    }).on('error', (e) => {
 				    	console.log("Failed to trigger on pair: " + p + ". Attempt was open: " + openTrade);
 						console.log("Tx error (" + e + ")");
@@ -620,10 +308,7 @@ socketSignals.on("signals", async (signal) => {
                             console.log("Active position at pair " + p + "? " + activePositions[p])
                         }
 
-				    	// setTimeout(() => {
-						// 	ordersTriggered = ordersTriggered.filter(item => JSON.stringify(item) !== JSON.stringify({trade:orderInfo.trade, orderType: orderInfo.type}));
-						// 	nftsBeingUsed = nftsBeingUsed.filter(item => item !== orderInfo.nftId);
-						// }, process.env.TRIGGER_TIMEOUT*1000);
+				    	
 				    });
 				}).catch(e => {
 					console.log("Failed to trigger (order type: " + orderInfo.name + ", nft id: "+orderInfo.nftId+")");
@@ -639,18 +324,15 @@ socketSignals.on("signals", async (signal) => {
                         console.log("Active position at pair " + p + "? " + activePositions[p])
                     }
 
-			    	// setTimeout(() => {
-					// 	ordersTriggered = ordersTriggered.filter(item => JSON.stringify(item) !== JSON.stringify({trade:orderInfo.trade, orderType: orderInfo.type}));
-					// 	nftsBeingUsed = nftsBeingUsed.filter(item => item !== orderInfo.nftId);
-					// }, process.env.TRIGGER_TIMEOUT*1000);
+			    
 				});
 
     updateBalance();
 
 }
-		
-        
+
 );
+
 // // -------------------------------------------------
 // 11. CREATE SERVER (USEFUL FOR CLOUD PLATFORMS)
 // -------------------------------------------------
