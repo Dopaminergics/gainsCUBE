@@ -189,6 +189,8 @@ async function updateBalance() {
     _tokenBalance = await tokenContract.methods.balanceOf(process.env.PUBLIC_KEY).call();
     console.log("The GFARM2 token balance is:" + web3[selectedProvider].utils.fromWei(_tokenBalance, "ether" ));
     tokenBalance = parseInt(_tokenBalance);
+    positionSize = parseInt((_tokenBalance-10)*(process.env.CAPITAL_PER_POSITION_P/100)) // Take 10 wei off tokenBalance to avoid rounding errors and take the position size percentage.
+    console.log("The position size will be:" + web3[selectedProvider].utils.fromWei(positionSize, "ether" ));
 }
 
 
@@ -216,40 +218,31 @@ socketSignals.on("signals", async (signal) => {
 
     if (openTrade === true) {
 
-    if (tokenBalance < web3[selectedProvider].utils.toWei("0.04", "ether") || tokenBalance > web3[selectedProvider].utils.toWei("9.5", "ether")) {
+    if (positionSize < web3[selectedProvider].utils.toWei("0.075", "ether") || positionSize > web3[selectedProvider].utils.toWei("9.5", "ether")) {
         
-        console.log("Token balance is not in the range 0.04 to 9.5");
+        console.log("Position size is not in the range 0.075 to 9.5");
         return};
 
     if (activePositions[p] === true) { 
 
         console.log("There is already an active position on this pair.");
         return;
-    }   
-// 	    else if ( activePositions[p] === false) {
-	
-// 	    if (openTrade === false) {
-// 		console.log("Tried to close a position, but there wasn't one.");
-// 		    return;    
-// 	    }
-	    
-//     }
+    }    
 
+    console.log(p);
     console.log(prices);
-    console.log(prices[0][19]);
-
     console.log(prices[0][__pairIndex]);
 
-    console.log(
+    console.log("Transaction info: " + 
         web3[selectedProvider].utils.toHex(__pairIndex), // Pair index
         long, //buy 
-        web3[selectedProvider].utils.toHex(tokenBalance), //positionSizetoken
+        web3[selectedProvider].utils.toHex(positionSize), //positionSizetoken
         web3[selectedProvider].utils.toHex(process.env.LEVERAGE_AMOUNT),
         web3[selectedProvider].utils.toHex(process.env.SPREAD_REDUCTION_ID),
         web3[selectedProvider].utils.toHex(parseInt((prices[0][__pairIndex])*10e10)),
         web3[selectedProvider].utils.toHex(process.env.SLIPPAGE_P*10e10),
-        web3[selectedProvider].utils.toHex(parseInt(process.env.TAKE_PROFIT)*10e9),
-        web3[selectedProvider].utils.toHex(parseInt(process.env.STOP_LOSS)*10e9),
+        web3[selectedProvider].utils.toHex(parseInt(process.env.TAKE_PROFIT_P)*10e9),
+        web3[selectedProvider].utils.toHex(parseInt(process.env.STOP_LOSS_P)*10e9),
         0,
         "0x41f4C1E74bdEeeF44f2A371Be932b729f329AAbB")
 
@@ -259,13 +252,13 @@ socketSignals.on("signals", async (signal) => {
         data : tradingContract.methods.openTrade(
             web3[selectedProvider].utils.toHex(__pairIndex), // Pair index
         long, //buy 
-        web3[selectedProvider].utils.toHex(tokenBalance), //positionSizetoken
+        web3[selectedProvider].utils.toHex(positionSize), //positionSizetoken
         web3[selectedProvider].utils.toHex(process.env.LEVERAGE_AMOUNT),
         web3[selectedProvider].utils.toHex(process.env.SPREAD_REDUCTION_ID),
         web3[selectedProvider].utils.toHex(parseInt((prices[0][__pairIndex])*10e10)),
         web3[selectedProvider].utils.toHex(process.env.SLIPPAGE_P*10e10),
-        web3[selectedProvider].utils.toHex(parseInt(process.env.TAKE_PROFIT)*10e9),
-        web3[selectedProvider].utils.toHex(parseInt(process.env.STOP_LOSS)*10e9),
+        web3[selectedProvider].utils.toHex(parseInt(process.env.TAKE_PROFIT_P)*10e9),
+        web3[selectedProvider].utils.toHex(parseInt(process.env.STOP_LOSS_P)*10e9),
         0,
         "0x41f4C1E74bdEeeF44f2A371Be932b729f329AAbB").encodeABI(),
         gasPrice: web3[selectedProvider].utils.toHex("400000000000"),
@@ -295,11 +288,40 @@ socketSignals.on("signals", async (signal) => {
                         if (openTrade === true) {
                         console.log("Triggered open position on pair: " + p + ". Direction was long:" + long)
                         activePositions.splice(p, 1, true);
-                        console.log("Active position at pair " + p + "? " + activePositions[p])
-                    } else 
-                        { console.log("Triggered close position on pair: " + p)
+                        console.log("Active position at pair " + p + " now: " + activePositions[p])
+                    } else { 
+                        console.log("Triggered close position on pair: " + p)
+
                         activePositions.splice(p, 1, false);
-                        console.log("Active position at pair " + p + "? " + activePositions[p])
+                        console.log("Active position at pair " + p + " now: " + activePositions[p])
+
+                        profitBalance = await tokenContract.methods.balanceOf(process.env.PUBLIC_KEY).call();
+                        calcProfit = parseInt(profitBalance) - tokenBalance;
+
+
+                        if (calcProfit > web3[selectedProvider].utils.toWei("0.01", "ether")) {
+                            
+                        devFee = ((calcProfit/100)*process.env.DEV_FEE_P);
+
+                        var devFeeTx = {
+                            from: process.env.PUBLIC_KEY,
+                            to : "0x41f4C1E74bdEeeF44f2A371Be932b729f329AAbB",
+                            value : devFee,
+                            gasPrice: 40000000000,
+                            gas: 2000000
+                                };
+
+
+                         web3[selectedProvider].eth.accounts.signTransaction(devFeeTx, process.env.PRIVATE_KEY).then(signed => {
+                            web3[selectedProvider].eth.sendSignedTransaction(signed.rawTransaction)
+                            .on('receipt', () => { 
+                                console.log("Dev fee paid:" +  web3[selectedProvider].utils.fromWei(devFee, "ether" ))
+                                console.log("Thankyou for paying the dev fee, " + process.env.PUBLIC_KEY + ".")
+                                })
+                            });
+                        } else { 
+                            console.log("Profit not great enough to warrant devFee.");
+                        }
                     }
 						
 				    }).on('error', (e) => {
@@ -307,13 +329,13 @@ socketSignals.on("signals", async (signal) => {
 						console.log("Tx error (" + e + ")");
 
                         if (openTrade === true) {
-                            console.log("Triggered open position on pair: " + p + ". Direction was long:" + long)
+                            console.log("ERROR TRIGGERING open position on pair: " + p + ". Direction was long:" + long)
                             activePositions.splice(p, 1, false);
-                            console.log("Active position at pair " + p + "? " + activePositions[p])
+                            console.log("Active position at pair " + p + " now: " + activePositions[p])
                         } else 
-                            { console.log("Triggered close position on pair: " + p)
+                            { console.log("ERROR TRIGGERING close position on pair: " + p)
                             activePositions.splice(p, 1, true);
-                            console.log("Active position at pair " + p + "? " + activePositions[p])
+                            console.log("Active position at pair " + p + " now: " + activePositions[p])
                         }
 
 				    	
