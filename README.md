@@ -3,7 +3,8 @@
 
  Welcome to the SHOSHIN-gCUBE unofficial b-cube.ai signalz for gains.trade                    
 BETA:   PLEASE MONITOR THE BOT AND POSITIONS AT THIS STAGE.                           
-Please leave dev_fee as 1% or greater. Signals worth > 350 EUR/mo. Consider 2%.              
+Please leave dev_fee as 1% or greater. 
+Signals worth > 350 EUR/mo. Consider 2%.              
 --------------------------------------------------------------------------------
 BETA: ENSURE ADDRESS IS APPROVED FOR DAI ON GAINS.TRADE. THIS WILL BE BUILT IN FOR FULL RELEASE. 
  - The server runs on heroku - during beta any downtime will result in no further positons being opened. 
