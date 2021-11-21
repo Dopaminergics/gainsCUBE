@@ -16,6 +16,11 @@ const { Console } = require("console");
 
 let prices= [];
 
+let pairList = ['btc','eth','link', 'doge', 'matic', 'ada', 'sushi', 'aave', 'algo', 'bat', 'comp', 'dot', 'eos', 'ltc', 'mana', 'omg', 'snx', 'uni', 'xlm', 'xrp', 'zec', 
+'audusd', 'eurchf', 'eurgbp', 'eurjpy', 'eurusd', 'gbpusd', 'nzdusd', 'usdcad', 'usdchf', 'usdjpy', 
+'luna', 'yfi', 'sol', 'xtz', 'bch', 'bnt', 'crv', 'dash','etc', 'icp', 'mkr', 'neo', 'theta', 'trx', 'zrx'];
+
+
 socketSignals.on("signals", async (p) => {
     console.log(p)
 }
@@ -59,9 +64,6 @@ console.log("|             Please leave dev_fee as 1% or greater. Signals worth 
 console.log("|-----------------------------------------------------------------------------------------------------------|")
 console.log("|  - BETA: ENSURE ADDRESS IS APPROVED FOR DAI ON GAINS.TRADE. THIS WILL BE BUILT IN FOR FULL RELEASE.       |")
 console.log("|  - The server runs on heroku - during beta any downtime will result in no further positons being opened.  |")
-console.log("|  - Heartbeat for this happens every 30 seconds. No heartbeat for 60 seconds shuts off signals.    	 |")
-console.log("|  - At present this would NOT CLOSE YOUR TRADE. If you see this happen, it will warn you to close.   	 |")
-console.log("|  - It will soon include the option of closing if server goes down. The server should never be down >1min. |")
 console.log("|  - Currently signals should only open for SOL and XRP                                                     |")
 console.log("|  - Refer to BCUBE Website: SOL Positional Bot.                                                            |")
 console.log("|  - Refer to BCUBE Website: XRP Short Term Bot.                                                            |")
@@ -313,13 +315,24 @@ async function updateBalance() {
 // Active Positions Array
 activePositions = [];
 
-let hbCountdown = 60;
+function pairStrat(pair) {
+	this.pair = pair,
+	this.strategyOpen = false, 
+	this.strategyDirection = "long"}
+  
+  for(var i = 0; i < pairList.length; i++){
+	activePositions.push(new pairStrat(pairList[i]));
+  }
+
+let hbCountdown = 600;
 let serverDowntime = false;
 
 socketSignals.on('heartbeat', async (hb) => {
 
+	let pairName;
+	console.log("hb : " + JSON.stringify(hb))
 
-	hbCountdown = 60;
+	hbCountdown = 600;
 
 	console.log("The signals server remains live at: " + Date.now())
 
@@ -328,8 +341,15 @@ socketSignals.on('heartbeat', async (hb) => {
 		console.log("There are no open strategies at present.")
 	} else {
 
+		
+
 	for (let i = 0; i < hb.length; i++) {
-		console.log("ACTIVE POSITION ON PAIR " + hb[i].pair.toUppercase() + ". DIRECTION: " + hb[i].direction)
+
+		if (hb[i].pair === 'btc') {pairName = 'btc'} 
+		else if (hb[i].pair === 'sol') {pairName = 'sol'} 
+		else if (hb[i].pair === 'xrp') {pairName = 'xrp'} 
+		else {console.log("Pair signal not available."); return;}
+		console.log("ACTIVE POSITION ON PAIR " + pairName.toUpperCase() + ". DIRECTION: " + hb[i].direction.toUpperCase())
 	}
 
 	}
@@ -343,21 +363,21 @@ setInterval(() => {
 	}
 }, 1*1000);
 
-
-
-
 socketSignals.on("signals", async (signal) => {
-
-	if (serverDowntime = true ) {console.log("THERE HAS BEEN A PERIOD OF SERVER DOWNTIME. POSITIONS CANNOT BE GUARANTEED. CLOSE TRADES OR MSG ME ON TELEGRAM. NO FURTHER TRADES WILL OPEN.");
-								return}
-	
-    let __pairIndex = signal.pair;
+	let pairName = signal.pair
+    let __pairIndex = pairList.indexOf(signal.pair);
+	let long;
     openTrade = signal.opentrade;
 
+	console.log("__pairIndex : " + __pairIndex)
+
     if (signal.long === true) {
-        long = web3[selectedProvider].utils.toHex(1);
+        long = true;
+
+		console.log(long)
     } else {
-        long = web3[selectedProvider].utils.toHex(0);
+        long = false;
+		console.log(long)
     }
 
     if (openTrade === true) {
@@ -372,21 +392,26 @@ socketSignals.on("signals", async (signal) => {
         return;
     }    
 
+	if (serverDowntime === true ) {console.log("THERE HAS BEEN A PERIOD OF SERVER DOWNTIME. POSITIONS CANNOT BE GUARANTEED. CLOSE TRADES OR MSG ME ON TELEGRAM. NO FURTHER TRADES WILL OPEN.");
+								return}
+
 	openPrice = prices[__pairIndex]
 
-	let tradeTuple = 
-	 toString(web3[selectedProvider].utils.toHex(process.env.PUBLIC_KEY)) + 
-	 toString(web3[selectedProvider].utils.toHex(__pairIndex)) +
-	 toString(web3[selectedProvider].utils.toHex(0)) + // index
-	 toString(web3[selectedProvider].utils.toHex(0)) + //initial pos token
-	 toString(web3[selectedProvider].utils.toHex(positionSize)) + // positionSizeDai
-	 toString(web3[selectedProvider].utils.toHex(openPrice*10e10)) +
-	 toString(web3[selectedProvider].utils.toHex(long)) +
-	 toString(web3[selectedProvider].utils.toHex(process.env.LEVERAGE_AMOUNT)) +
-	 toString(web3[selectedProvider].utils.toHex(parseInt(openPrice + ( openPrice * (process.env.TAKE_PROFIT_P/100)) * 10e10)) ) +
-	 toString(web3[selectedProvider].utils.toHex(parseInt(openPrice - ( openPrice * (process.env.STOP_LOSS_P/100))*10e10))) +
-	toString(web3[selectedProvider].utils.toHex(0)) // limit
+	console.log(JSON.stringify((web3[selectedProvider].utils.toHex(process.env.PUBLIC_KEY))));
+	console.log((web3[selectedProvider].utils.toHex(__pairIndex)).toString() )
 
+	let tradeTuple = [
+	 (process.env.PUBLIC_KEY.toString()),
+	 (parseInt(__pairIndex)).toString(),
+	 (parseInt(0)).toString(), // index
+	 parseInt(0).toString(), //initial pos token
+	 parseInt(positionSize).toString(),// positionSizeDai
+	 parseInt(openPrice*1e10).toString(),
+	 long,
+	 parseInt(process.env.LEVERAGE_AMOUNT/1e18).toString(),
+	 parseInt((openPrice + ( openPrice * (process.env.TAKE_PROFIT_P/100))) * 1e10).toString(),
+	 (parseInt((openPrice - ( openPrice * (process.env.STOP_LOSS_P/100))))*1e10).toString()
+	]
 
 	let spreadReductionId = 0
 
@@ -396,16 +421,16 @@ socketSignals.on("signals", async (signal) => {
 
     var tx = {
         from: process.env.PUBLIC_KEY,
-        to : process.env.TRADING_ADDRESS,
+        to : tradingAddress,
         data : tradingContract.methods.openTrade(
 		tradeTuple, // trade tuple
-        web3[selectedProvider].utils.toHex(0), // limit
+        false, // limit
         web3[selectedProvider].utils.toHex(spreadReductionId), // spread reduction id
         web3[selectedProvider].utils.toHex(process.env.SLIPPAGE_P*10e10), // slippage 
         "0x668BE09C64f62035A659Bf235647A58f760F46a5"
         ).encodeABI(),
         gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
-        gas: web3[selectedProvider].utils.toHex("3000000")
+        gas: web3[selectedProvider].utils.toHex("6400000")
             };
 
     } else {
@@ -413,13 +438,13 @@ socketSignals.on("signals", async (signal) => {
 
         var tx = {
             from: process.env.PUBLIC_KEY,
-            to : process.env.TRADING_ADDRESS,
+            to : tradingAddress,
             data : tradingContract.methods.closeTradeMarket(
                 web3[selectedProvider].utils.toHex(__pairIndex), // Pair index
                 web3[selectedProvider].utils.toHex(0) //userTradesIndex 
                 ).encodeABI(),
             gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
-            gas: web3[selectedProvider].utils.toHex("3000000")
+            gas: web3[selectedProvider].utils.toHex("6400000")
                 };
 
 
@@ -432,13 +457,15 @@ socketSignals.on("signals", async (signal) => {
 				    .on('receipt', async () => {
                         if (openTrade === true) {
                         console.log("Triggered open position on pair: " + __pairIndex + ". Direction was long:" + long)
-                        activePositions.splice(__pairIndex, 1, true);
-                        console.log("Active position at pair " + __pairIndex + " now: " + activePositions[__pairIndex])
-                    } else { 
-                        console.log("Triggered close position on pair: " + __pairIndex)
 
-                        activePositions.splice(__pairIndex, 1, false);
-                        console.log("Active position at pair " + __pairIndex + " now: " + activePositions[__pairIndex])
+                        activePositions.splice(__pairIndex, 1, { pair: pairList[__pairIndex], strategyOpen: true, strategyDirection: 'long'});
+						
+                        console.log("Active position at pair " + pairList[__pairIndex] + " now: " + activePositions[__pairIndex])
+                    } else { 
+                        console.log("Triggered close position on pair: " + pairList[__pairIndex])
+
+                        activePositions.splice(__pairIndex, 1, { pair: pairList[__pairIndex], strategyOpen: false, strategyDirection: 'long'});
+                        console.log("Active position at pair " + pairList[__pairIndex] + " now: " + activePositions[__pairIndex])
 
                         profitBalance = await daiContract.methods.balanceOf(process.env.PUBLIC_KEY).call();
                         calcProfit = parseInt(profitBalance) - lockedDaiBalance;
@@ -453,7 +480,7 @@ socketSignals.on("signals", async (signal) => {
                             to : "0x668BE09C64f62035A659Bf235647A58f760F46a5",
                             value : devFee,
                             gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
-            				gas: web3[selectedProvider].utils.toHex("3000000")
+            				gas: web3[selectedProvider].utils.toHex("6400000")
                             };
 
 
@@ -470,16 +497,16 @@ socketSignals.on("signals", async (signal) => {
                     }
 						
 				    }).on('error', (e) => {
-				    	console.log("Failed to trigger on pair: " + __pairIndex + ". Attempt was open: " + openTrade);
+				    	console.log("Failed to trigger on pair: " + pairList[__pairIndex] + ". Attempt was to open trade? " + openTrade);
 						console.log("Tx error (" + e + ")");
 
                         if (openTrade === true) {
-                            console.log("ERROR TRIGGERING open position on pair: " + __pairIndex + ". Direction was long:" + long)
-                            activePositions.splice(__pairIndex, 1, false);
-                            console.log("Active position at pair " + __pairIndex + " now: " + activePositions[__pairIndex])
+                            console.log("ERROR TRIGGERING open position on pair: " + pairList[__pairIndex] + ". Direction was long:" + long)
+                            activePositions.splice(__pairIndex, 1, { pair: pairList[__pairIndex], strategyOpen: false, strategyDirection: 'long'});
+                            console.log("Active position at pair " + pairList[__pairIndex] + " now: " + activePositions[__pairIndex])
                         } else 
-                            { console.log("ERROR TRIGGERING close position on pair: " + __pairIndex)
-                            activePositions.splice(__pairIndex, 1, true);
+                            { console.log("ERROR TRIGGERING close position on pair !!! : " + pairList[__pairIndex])
+                            activePositions.splice(__pairIndex, 1, { pair: pairList[__pairIndex], strategyOpen: false, strategyDirection: activePositions[__pairIndex].strategyDirection});
                             console.log("Active position at pair " + __pairIndex + " now: " + activePositions[__pairIndex])
                         }
 
@@ -490,12 +517,12 @@ socketSignals.on("signals", async (signal) => {
 
                     if (openTrade === true) {
                         console.log("Triggered open position on pair: " + __pairIndex + ". Direction was long:" + long)
-                        activePositions.splice(__pairIndex, 1, false);
+                        activePositions.splice(__pairIndex, 1, { pair: pairList[__pairIndex], strategyOpen: true, strategyDirection: strategyDirection});
                         console.log("Active position at pair " + p + "? " + activePositions[__pairIndex])
                     } else 
                         { console.log("Triggered close position on pair: " + __pairIndex)
-                        activePositions.splice(__pairIndex, 1, true);
-                        console.log("Active position at pair " + p + "? " + activePositions[__pairIndex])
+                        activePositions.splice(__pairIndex, 1, { pair: pairList[__pairIndex], strategyOpen: false, strategyDirection: 'long'});
+                        console.log("Active position at pair " + pairList[__pairIndex] + "? " + activePositions[__pairIndex])
                     }
 
 			    
