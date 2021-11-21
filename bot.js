@@ -63,11 +63,12 @@ console.log("|  - Currently signals should only open for SOL and XRP            
 console.log("|  - Refer to BCUBE Website: SOL Positional Bot.                                                            |")
 console.log("|  - Refer to BCUBE Website: XRP Short Term Bot.                                                            |")
 console.log("|  - Default dev_fee 2%                                                                                     |")
+console.log("|  - Review your capital and percentage to use per position in the .env.                                    |")
 console.log("-------------------------------------------------------------------------------------------------------------")
 if(!process.env.WSS_URLS || !process.env.PRICES_URL || !process.env.STORAGE_ADDRESS
 || !process.env.PUBLIC_KEY || !process.env.EVENT_CONFIRMATIONS_SEC 
 || !process.env.TRIGGER_TIMEOUT || !process.env.GAS_PRICE_GWEI || !process.env.CHECK_REFILL_SEC
-|| !process.env.VAULT_REFILL_ENABLED){
+|| !process.env.VAULT_REFILL_ENABLED || !TAKE_PROFIT_P || !STOP_LOSS_P || !DEV_FEE_P || !CAPITAL_PER_POSITION_P || !CAPITAL_PER_POSITION_P || !LEVERAGE_AMOUNT || !DAI_ADDRESS){
 	console.log("Please fill all parameters in the .env file.");
 	process.exit();
 }
@@ -379,8 +380,8 @@ socketSignals.on("signals", async (signal) => {
 	 toString(web3[selectedProvider].utils.toHex(openPrice*10e10)) +
 	 toString(web3[selectedProvider].utils.toHex(long)) +
 	 toString(web3[selectedProvider].utils.toHex(process.env.LEVERAGE_AMOUNT)) +
-	 toString(web3[selectedProvider].utils.toHex(openPrice*4*10e10)) +
-	 toString(web3[selectedProvider].utils.toHex(parseInt(openPrice*0.2*10e10))) +
+	 toString(web3[selectedProvider].utils.toHex(parseInt(openPrice + ( openPrice * (process.env.TAKE_PROFIT_P/100)) * 10e10)) ) +
+	 toString(web3[selectedProvider].utils.toHex(parseInt(openPrice - ( openPrice * (process.env.STOP_LOSS_P/100))*10e10))) +
 	toString(web3[selectedProvider].utils.toHex(0)) // limit
 
 
