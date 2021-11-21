@@ -59,6 +59,9 @@ console.log("|             Please leave dev_fee as 1% or greater. Signals worth 
 console.log("|-----------------------------------------------------------------------------------------------------------|")
 console.log("|  - BETA: ENSURE ADDRESS IS APPROVED FOR DAI ON GAINS.TRADE. THIS WILL BE BUILT IN FOR FULL RELEASE.       |")
 console.log("|  - The server runs on heroku - during beta any downtime will result in no further positons being opened.  |")
+console.log("|  - Heartbeat for this happens every 30 seconds. No heartbeat for 60 seconds shuts off signals.    	 |")
+console.log("|  - At present this would NOT CLOSE YOUR TRADE. If you see this happen, it will warn you to close.   	 |")
+console.log("|  - It will soon include the option of closing if server goes down. The server should never be down >1min. |")
 console.log("|  - Currently signals should only open for SOL and XRP                                                     |")
 console.log("|  - Refer to BCUBE Website: SOL Positional Bot.                                                            |")
 console.log("|  - Refer to BCUBE Website: XRP Short Term Bot.                                                            |")
@@ -68,7 +71,7 @@ console.log("-------------------------------------------------------------------
 if(!process.env.WSS_URLS || !process.env.PRICES_URL || !process.env.STORAGE_ADDRESS
 || !process.env.PUBLIC_KEY || !process.env.EVENT_CONFIRMATIONS_SEC 
 || !process.env.TRIGGER_TIMEOUT || !process.env.GAS_PRICE_GWEI || !process.env.CHECK_REFILL_SEC
-|| !process.env.VAULT_REFILL_ENABLED || !TAKE_PROFIT_P || !STOP_LOSS_P || !DEV_FEE_P || !CAPITAL_PER_POSITION_P || !CAPITAL_PER_POSITION_P || !LEVERAGE_AMOUNT || !DAI_ADDRESS){
+|| !process.env.VAULT_REFILL_ENABLED || !process.env.TAKE_PROFIT_P || !process.env.STOP_LOSS_P || !process.env.DEV_FEE_P || !process.env.CAPITAL_PER_POSITION_P || !process.env.CAPITAL_PER_POSITION_P || !process.env.LEVERAGE_AMOUNT || !process.env.DAI_ADDRESS){
 	console.log("Please fill all parameters in the .env file.");
 	process.exit();
 }
