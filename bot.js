@@ -299,7 +299,7 @@ async function updateBalance() {
     _daiBalance = await daiContract.methods.balanceOf(process.env.PUBLIC_KEY).call();
     console.log("The DAI token balance is:" + web3[selectedProvider].utils.fromWei(_daiBalance, "ether" ));
     daiBalance = parseInt(_daiBalance);
-    positionSize = parseInt((_daiBalance-0.1)*(process.env.CAPITAL_PER_POSITION_P/100)) // Take 0.1 dai off _daiBalance to avoid rounding errors and take the position size percentage.
+    positionSize = parseInt((_daiBalance-(1*1e18))*(process.env.CAPITAL_PER_POSITION_P/100)) // Take 0.1 dai off _daiBalance to avoid rounding errors and take the position size percentage.
     console.log("The position size will be:" + web3[selectedProvider].utils.fromWei(positionSize.toString(), "ether" ));
 }
 
@@ -394,17 +394,20 @@ socketSignals.on("signals", async (signal) => {
 		console.log(JSON.stringify((web3[selectedProvider].utils.toHex(process.env.PUBLIC_KEY))));
 		console.log((web3[selectedProvider].utils.toHex(__pairIndex)).toString() )
 
+		positionSizeTP = 
+		positionSizeSL = (positionSize*(process.env.TAKE_PROFIT_P/100)/process.env.LEVERAGE_AMOUNT)
+
 		let tradeTuple = [
 		(process.env.PUBLIC_KEY.toString()),
 		(parseInt(__pairIndex)).toString(),
 		(parseInt(0)).toString(), // index
 		parseInt(0).toString(), //initial pos token
-		parseInt(positionSize-1).toString(),// positionSizeDai
+		parseInt(positionSize).toString(),// positionSizeDai
 		parseInt(openPrice*1e10).toString(),
 		long,
 		parseInt(process.env.LEVERAGE_AMOUNT/1e18).toString(),
-		parseInt((openPrice + ( openPrice * (process.env.TAKE_PROFIT_P/100))) * 1e10).toString(),
-		(parseInt((openPrice - ( openPrice * (process.env.STOP_LOSS_P/100))))*1e10).toString()
+		parseInt((openPrice + (openPrice*(process.env.TAKE_PROFIT_P/100)/process.env.LEVERAGE_AMOUNT)) * 1e10).toString(),
+		parseInt((openPrice - (openPrice*(process.env.STOP_LOSS_P/100)/process.env.LEVERAGE_AMOUNT)) *1e10).toString()
 		]
 
 		let spreadReductionId = 0
