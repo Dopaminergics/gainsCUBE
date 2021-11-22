@@ -8,7 +8,7 @@ Signals worth > 350 EUR/mo. Consider 2%.
 --------------------------------------------------------------------------------
 BETA: ENSURE ADDRESS IS APPROVED FOR DAI ON GAINS.TRADE. THIS WILL BE BUILT IN FOR FULL RELEASE. 
 
-- MAX 50 DAI PER POSITION SUGGESTED AT PRESENT. E.G. 100 DAI on account and set capital per position to 45-50 (this is a percentage).
+- **MAX 50 DAI PER POSITION SUGGESTED AT PRESENT. E.G. 100 DAI on account and set capital per position to 45-50 (this is a percentage).**
 - - Suggested in future 20% of capital per position. Each position should have at least 50 DAI.
 
  - The server runs on heroku - during beta any downtime will result in no further positons being opened. 
@@ -21,8 +21,6 @@ BETA: ENSURE ADDRESS IS APPROVED FOR DAI ON GAINS.TRADE. THIS WILL BE BUILT IN F
 - If you are running this locally, you need to download nodejs, and I suggest Visual Studio Code as well.
 - Navigate to the folder you saved these files in and type "node bot" into the console.
 
-- 50 dai
-- 5 matic
 
 
 
