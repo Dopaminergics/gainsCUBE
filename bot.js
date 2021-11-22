@@ -58,12 +58,18 @@ let daiContractSetup = false;
 // 3. INIT: CHECK ENV VARS 
 // --------------------------------------------
 console.log("-------------------------------------------------------------------------------------------------------------")
-console.log("|              				初心 gainsCUBE 初心                                               |")
-console.log("|              	      初心 Unofficial b-cube.ai signalz for gains.trade 初心                              |");
-console.log("|-----------------------------------------------------------------------------------------------------------|")
+console.log("|              Welcome to the SHOSHIN-gCUBE unofficial b-cube.ai signalz for gains.trade                    |");
 console.log("|                     BETA:   PLEASE MONITOR THE BOT AND POSITIONS AT THIS STAGE.                           |")
 console.log("|             Please leave dev_fee as 1% or greater. Signals worth > 350 EUR/mo. Consider 2%.               |")
 console.log("|-----------------------------------------------------------------------------------------------------------|")
+console.log("|  - BETA: ENSURE ADDRESS IS APPROVED FOR DAI ON GAINS.TRADE. THIS WILL BE BUILT IN FOR FULL RELEASE.       |")
+console.log("|  - The server runs on heroku - during beta any downtime will result in no further positons being opened.  |")
+console.log("|  - Currently signals should only open for SOL and XRP                                                     |")
+console.log("|  - Refer to BCUBE Website: SOL Positional Bot.                                                            |")
+console.log("|  - Refer to BCUBE Website: XRP Short Term Bot.                                                            |")
+console.log("|  - Default dev_fee 2%                                                                                     |")
+console.log("|  - Review your capital and percentage to use per position in the .env.                                    |")
+console.log("-------------------------------------------------------------------------------------------------------------")
 if(!process.env.WSS_URLS || !process.env.PRICES_URL || !process.env.STORAGE_ADDRESS
 || !process.env.PUBLIC_KEY || !process.env.EVENT_CONFIRMATIONS_SEC 
 || !process.env.TRIGGER_TIMEOUT || !process.env.GAS_PRICE_GWEI || !process.env.CHECK_REFILL_SEC
@@ -358,9 +364,6 @@ setInterval(() => {
 }, 1*1000);
 
 socketSignals.on("signals", async (signal) => {
-	
-	if (signal.pair.length < 1) {return}
-	
 	let pairName = signal.pair
     let __pairIndex = pairList.indexOf(signal.pair);
 	let long;
@@ -402,7 +405,7 @@ socketSignals.on("signals", async (signal) => {
 	 (parseInt(__pairIndex)).toString(),
 	 (parseInt(0)).toString(), // index
 	 parseInt(0).toString(), //initial pos token
-	 parseInt(positionSize).toString(),// positionSizeDai
+	 parseInt(positionSize-1).toString(),// positionSizeDai
 	 parseInt(openPrice*1e10).toString(),
 	 long,
 	 parseInt(process.env.LEVERAGE_AMOUNT/1e18).toString(),
@@ -535,43 +538,43 @@ socketSignals.on("signals", async (signal) => {
 // REFILL VAULT IF CAN BE REFILLED
 // ------------------------------------------
 
-// if(process.env.VAULT_REFILL_ENABLED){
-// 	async function refill(){
-// 		const canRefill = await vaultContract.methods.canRefill().call();
-// 		if(canRefill){
-// 			const currentBalanceDai = await vaultContract.methods.currentBalanceDai().call();
-// 			const maxBalanceDai = await vaultContract.methods.maxBalanceDai().call();
+if(process.env.VAULT_REFILL_ENABLED){
+	async function refill(){
+		const canRefill = await vaultContract.methods.canRefill().call();
+		if(canRefill){
+			const currentBalanceDai = await vaultContract.methods.currentBalanceDai().call();
+			const maxBalanceDai = await vaultContract.methods.maxBalanceDai().call();
 
-// 			if(parseFloat(currentBalanceDai) < parseFloat(maxBalanceDai)){
-// 				const tx = {
-// 					from: process.env.PUBLIC_KEY,
-// 				    to : vaultContract.options.address,
-// 				    data : vaultContract.methods.refill().encodeABI(),
-// 				    gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
-// 				    gas: web3[selectedProvider].utils.toHex("1000000"),
-// 				    gasLimit: web3[selectedProvider].utils.toHex("500000")
-// 				};
+			if(parseFloat(currentBalanceDai) < parseFloat(maxBalanceDai)){
+				const tx = {
+					from: process.env.PUBLIC_KEY,
+				    to : vaultContract.options.address,
+				    data : vaultContract.methods.refill().encodeABI(),
+				    gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
+				    gas: web3[selectedProvider].utils.toHex("1000000"),
+				    gasLimit: web3[selectedProvider].utils.toHex("500000")
+				};
 
-// 				web3[selectedProvider].eth.accounts.signTransaction(tx, process.env.PRIVATE_KEY).then(signed => {
-// 				    web3[selectedProvider].eth.sendSignedTransaction(signed.rawTransaction)
-// 				    .on('receipt', () => {
-// 						console.log("Vault successfully refilled.");
-// 				    }).on('error', (e) => {
-// 				    	console.log("Vault refill tx fail", e);
-// 				    });
-// 				}).catch(e => {
-// 					console.log("Vault refill tx fail", e);
-// 				});
-// 			}
-// 		}else{
-// 			console.log("Vault cannot be refilled yet.");
-// 		}
-// 	}
+				web3[selectedProvider].eth.accounts.signTransaction(tx, process.env.PRIVATE_KEY).then(signed => {
+				    web3[selectedProvider].eth.sendSignedTransaction(signed.rawTransaction)
+				    .on('receipt', () => {
+						console.log("Vault successfully refilled.");
+				    }).on('error', (e) => {
+				    	console.log("Vault refill tx fail", e);
+				    });
+				}).catch(e => {
+					console.log("Vault refill tx fail", e);
+				});
+			}
+		}else{
+			console.log("Vault cannot be refilled yet.");
+		}
+	}
 
-// 	setInterval(() => {
-// 		// refill();
-// 	}, process.env.CHECK_REFILL_SEC*1000);
-// }
+	setInterval(() => {
+		refill();
+	}, process.env.CHECK_REFILL_SEC*1000);
+}
 
 // // -------------------------------------------------
 // 11. CREATE SERVER (USEFUL FOR CLOUD PLATFORMS)
