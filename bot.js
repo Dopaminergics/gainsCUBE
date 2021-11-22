@@ -58,7 +58,7 @@ let daiContractSetup = false;
 // 3. INIT: CHECK ENV VARS 
 // --------------------------------------------
 console.log("----------------------------------------------------------------------------------")
-console.log("|初心   					           gainsCUBE   				               初心|");
+console.log("|初心                                 gainsCUBE                               初心|");
 console.log("|                     Unofficial b-cube.ai signalz for gains.trade               |")
 console.log("|--------------------------------------------------------------------------------|")
 console.log("| Please leave dev_fee as 1% or greater. Signals worth >350 EUR/mo. Consider 2%. |")
