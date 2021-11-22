@@ -538,43 +538,43 @@ socketSignals.on("signals", async (signal) => {
 // REFILL VAULT IF CAN BE REFILLED
 // ------------------------------------------
 
-if(process.env.VAULT_REFILL_ENABLED){
-	async function refill(){
-		const canRefill = await vaultContract.methods.canRefill().call();
-		if(canRefill){
-			const currentBalanceDai = await vaultContract.methods.currentBalanceDai().call();
-			const maxBalanceDai = await vaultContract.methods.maxBalanceDai().call();
+// if(process.env.VAULT_REFILL_ENABLED){
+// 	async function refill(){
+// 		const canRefill = await vaultContract.methods.canRefill().call();
+// 		if(canRefill){
+// 			const currentBalanceDai = await vaultContract.methods.currentBalanceDai().call();
+// 			const maxBalanceDai = await vaultContract.methods.maxBalanceDai().call();
 
-			if(parseFloat(currentBalanceDai) < parseFloat(maxBalanceDai)){
-				const tx = {
-					from: process.env.PUBLIC_KEY,
-				    to : vaultContract.options.address,
-				    data : vaultContract.methods.refill().encodeABI(),
-				    gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
-				    gas: web3[selectedProvider].utils.toHex("1000000"),
-				    gasLimit: web3[selectedProvider].utils.toHex("500000")
-				};
+// 			if(parseFloat(currentBalanceDai) < parseFloat(maxBalanceDai)){
+// 				const tx = {
+// 					from: process.env.PUBLIC_KEY,
+// 				    to : vaultContract.options.address,
+// 				    data : vaultContract.methods.refill().encodeABI(),
+// 				    gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
+// 				    gas: web3[selectedProvider].utils.toHex("1000000"),
+// 				    gasLimit: web3[selectedProvider].utils.toHex("500000")
+// 				};
 
-				web3[selectedProvider].eth.accounts.signTransaction(tx, process.env.PRIVATE_KEY).then(signed => {
-				    web3[selectedProvider].eth.sendSignedTransaction(signed.rawTransaction)
-				    .on('receipt', () => {
-						console.log("Vault successfully refilled.");
-				    }).on('error', (e) => {
-				    	console.log("Vault refill tx fail", e);
-				    });
-				}).catch(e => {
-					console.log("Vault refill tx fail", e);
-				});
-			}
-		}else{
-			console.log("Vault cannot be refilled yet.");
-		}
-	}
+// 				web3[selectedProvider].eth.accounts.signTransaction(tx, process.env.PRIVATE_KEY).then(signed => {
+// 				    web3[selectedProvider].eth.sendSignedTransaction(signed.rawTransaction)
+// 				    .on('receipt', () => {
+// 						console.log("Vault successfully refilled.");
+// 				    }).on('error', (e) => {
+// 				    	console.log("Vault refill tx fail", e);
+// 				    });
+// 				}).catch(e => {
+// 					console.log("Vault refill tx fail", e);
+// 				});
+// 			}
+// 		}else{
+// 			console.log("Vault cannot be refilled yet.");
+// 		}
+// 	}
 
-	setInterval(() => {
-		refill();
-	}, process.env.CHECK_REFILL_SEC*1000);
-}
+// 	setInterval(() => {
+// 		// refill();
+// 	}, process.env.CHECK_REFILL_SEC*1000);
+// }
 
 // // -------------------------------------------------
 // 11. CREATE SERVER (USEFUL FOR CLOUD PLATFORMS)
