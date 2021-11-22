@@ -58,18 +58,15 @@ let daiContractSetup = false;
 // 3. INIT: CHECK ENV VARS 
 // --------------------------------------------
 console.log("-------------------------------------------------------------------------------------------------------------")
-console.log("|              Welcome to the SHOSHIN-gCUBE unofficial b-cube.ai signalz for gains.trade                    |");
-console.log("|                     BETA:   PLEASE MONITOR THE BOT AND POSITIONS AT THIS STAGE.                           |")
+console.log("|初心   					                    gainsCUBE   				                              初心|");
+console.log("|                           Unofficial b-cube.ai signalz for gains.trade                                    |")
+console.log("|-----------------------------------------------------------------------------------------------------------|")
 console.log("|             Please leave dev_fee as 1% or greater. Signals worth > 350 EUR/mo. Consider 2%.               |")
 console.log("|-----------------------------------------------------------------------------------------------------------|")
-console.log("|  - BETA: ENSURE ADDRESS IS APPROVED FOR DAI ON GAINS.TRADE. THIS WILL BE BUILT IN FOR FULL RELEASE.       |")
-console.log("|  - The server runs on heroku - during beta any downtime will result in no further positons being opened.  |")
-console.log("|  - Currently signals should only open for SOL and XRP                                                     |")
-console.log("|  - Refer to BCUBE Website: SOL Positional Bot.                                                            |")
-console.log("|  - Refer to BCUBE Website: XRP Short Term Bot.                                                            |")
-console.log("|  - Default dev_fee 2%                                                                                     |")
-console.log("|  - Review your capital and percentage to use per position in the .env.                                    |")
+console.log("|  					BETA: ENSURE ADDRESS IS APPROVED FOR DAI ON GAINS.TRADE.                             |")
+console.log("|初心 					BETA: PLEASE MONITOR BOT AND POSITION SIZES AT THIS TIME.                         初心|")
 console.log("-------------------------------------------------------------------------------------------------------------")
+
 if(!process.env.WSS_URLS || !process.env.PRICES_URL || !process.env.STORAGE_ADDRESS
 || !process.env.PUBLIC_KEY || !process.env.EVENT_CONFIRMATIONS_SEC 
 || !process.env.TRIGGER_TIMEOUT || !process.env.GAS_PRICE_GWEI || !process.env.CHECK_REFILL_SEC
@@ -371,67 +368,64 @@ socketSignals.on("signals", async (signal) => {
 
 	console.log("__pairIndex : " + __pairIndex)
 
-    if (signal.long === true) {
+    if (signal.direction === 'long') {
         long = true;
-
-		console.log(long)
     } else {
         long = false;
-		console.log(long)
     }
 
     if (openTrade === true) {
 
-    if (positionSize < web3[selectedProvider].utils.toWei("35", "ether") || positionSize > web3[selectedProvider].utils.toWei("4000", "ether")) {
+    	if (positionSize < web3[selectedProvider].utils.toWei("35", "ether") || positionSize > web3[selectedProvider].utils.toWei("4000", "ether")) {
         
         console.log("Position size is not in range 35 DAI to 4000 DAI");
         return};
 
-    if (activePositions[__pairIndex] === true) { 
+    	if (activePositions[__pairIndex] === true) { 
         console.log("There is already an active position on this pair.");
         return;
-    }    
+    	}    
 
-	if (serverDowntime === true ) {console.log("THERE HAS BEEN A PERIOD OF SERVER DOWNTIME. POSITIONS CANNOT BE GUARANTEED. CLOSE TRADES OR MSG ME ON TELEGRAM. NO FURTHER TRADES WILL OPEN.");
-								return}
+		if (serverDowntime === true ) {console.log("THERE HAS BEEN A PERIOD OF SERVER DOWNTIME. POSITIONS CANNOT BE GUARANTEED. CLOSE TRADES OR MSG ME ON TELEGRAM. NO FURTHER TRADES WILL OPEN.");
+									return}
 
-	openPrice = prices[__pairIndex]
+		openPrice = prices[__pairIndex]
 
-	console.log(JSON.stringify((web3[selectedProvider].utils.toHex(process.env.PUBLIC_KEY))));
-	console.log((web3[selectedProvider].utils.toHex(__pairIndex)).toString() )
+		console.log(JSON.stringify((web3[selectedProvider].utils.toHex(process.env.PUBLIC_KEY))));
+		console.log((web3[selectedProvider].utils.toHex(__pairIndex)).toString() )
 
-	let tradeTuple = [
-	 (process.env.PUBLIC_KEY.toString()),
-	 (parseInt(__pairIndex)).toString(),
-	 (parseInt(0)).toString(), // index
-	 parseInt(0).toString(), //initial pos token
-	 parseInt(positionSize-1).toString(),// positionSizeDai
-	 parseInt(openPrice*1e10).toString(),
-	 long,
-	 parseInt(process.env.LEVERAGE_AMOUNT/1e18).toString(),
-	 parseInt((openPrice + ( openPrice * (process.env.TAKE_PROFIT_P/100))) * 1e10).toString(),
-	 (parseInt((openPrice - ( openPrice * (process.env.STOP_LOSS_P/100))))*1e10).toString()
-	]
+		let tradeTuple = [
+		(process.env.PUBLIC_KEY.toString()),
+		(parseInt(__pairIndex)).toString(),
+		(parseInt(0)).toString(), // index
+		parseInt(0).toString(), //initial pos token
+		parseInt(positionSize-1).toString(),// positionSizeDai
+		parseInt(openPrice*1e10).toString(),
+		long,
+		parseInt(process.env.LEVERAGE_AMOUNT/1e18).toString(),
+		parseInt((openPrice + ( openPrice * (process.env.TAKE_PROFIT_P/100))) * 1e10).toString(),
+		(parseInt((openPrice - ( openPrice * (process.env.STOP_LOSS_P/100))))*1e10).toString()
+		]
 
-	let spreadReductionId = 0
+		let spreadReductionId = 0
 
-	if (nfts.length > 0) { 
-		spreadReductionId = nfts[nfts.length-1].id
-	}
+		if (nfts.length > 0) { 
+			spreadReductionId = nfts[nfts.length-1].id
+		}
 
-    var tx = {
-        from: process.env.PUBLIC_KEY,
-        to : tradingAddress,
-        data : tradingContract.methods.openTrade(
-		tradeTuple, // trade tuple
-        false, // limit
-        web3[selectedProvider].utils.toHex(spreadReductionId), // spread reduction id
-        web3[selectedProvider].utils.toHex(process.env.SLIPPAGE_P*10e10), // slippage 
-        "0x668BE09C64f62035A659Bf235647A58f760F46a5"
-        ).encodeABI(),
-        gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
-        gas: web3[selectedProvider].utils.toHex("6400000")
-            };
+		var tx = {
+			from: process.env.PUBLIC_KEY,
+			to : tradingAddress,
+			data : tradingContract.methods.openTrade(
+			tradeTuple, // trade tuple
+			false, // limit
+			web3[selectedProvider].utils.toHex(spreadReductionId), // spread reduction id
+			web3[selectedProvider].utils.toHex(process.env.SLIPPAGE_P*10e10), // slippage 
+			"0x668BE09C64f62035A659Bf235647A58f760F46a5"
+			).encodeABI(),
+			gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
+			gas: web3[selectedProvider].utils.toHex("6400000")
+				};
 
     } else {
 
