@@ -364,6 +364,9 @@ setInterval(() => {
 }, 1*1000);
 
 socketSignals.on("signals", async (signal) => {
+	
+	if (signal.pair.length < 1) {return}
+	
 	let pairName = signal.pair
     let __pairIndex = pairList.indexOf(signal.pair);
 	let long;
