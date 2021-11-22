@@ -1,7 +1,7 @@
-#初心 SHOSHIN 初心
 
 
-Welcome to the SHOSHIN unofficial b-cube.ai signalz for gains.trade                    
+
+## 初心 SHOSHIN b-cube => gains.trade signalz bot 初心                
 BETA:   PLEASE MONITOR THE BOT AND POSITIONS AT THIS STAGE.                           
 Please leave dev_fee as 1% or greater. 
 Signals worth > 350 EUR/mo. Consider 2%.              
