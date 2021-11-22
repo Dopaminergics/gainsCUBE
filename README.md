@@ -7,6 +7,10 @@ Please leave dev_fee as 1% or greater.
 Signals worth > 350 EUR/mo. Consider 2%.              
 --------------------------------------------------------------------------------
 BETA: ENSURE ADDRESS IS APPROVED FOR DAI ON GAINS.TRADE. THIS WILL BE BUILT IN FOR FULL RELEASE. 
+
+- MAX 50 DAI PER POSITION SUGGESTED AT PRESENT. E.G. 100 DAI on account and set capital per position to 45-50 (this is a percentage).
+- - Suggested in future 20% of capital per position. Each position should have at least 50 DAI.
+
  - The server runs on heroku - during beta any downtime will result in no further positons being opened. 
  - Currently signals should only open for SOL and XRP                                                     
  - Refer to BCUBE Website: SOL Positional Bot.                                                            
@@ -19,8 +23,8 @@ BETA: ENSURE ADDRESS IS APPROVED FOR DAI ON GAINS.TRADE. THIS WILL BE BUILT IN F
 
 - 50 dai
 - 5 matic
-- Suggested in future 20% of capital per position. Each position should be at least 50 dai aka 250 DAI on account.
-- During testing 100% of 50 dai position is useful to test.
+
+
 
 ## Prior to running: 
 1. Create a .env file using the example supplied in .env-example
