@@ -374,43 +374,42 @@ socketSignals.on("signals", async (signal) => {
 
     	if (positionSize < web3[selectedProvider].utils.toWei("35", "ether") || positionSize > web3[selectedProvider].utils.toWei("4000", "ether")) {
         
-        console.log("Position size is not in range 35 DAI to 4000 DAI");
+        	console.log("Position size is not in range 35 DAI to 4000 DAI");
         return};
 
     	if (activePositions[__pairIndex] === true) { 
-        console.log("There is already an active position on this pair.");
-        return;
+        	console.log("There is already an active position on this pair.");
+        	return;
     	}    
 
-		if (serverDowntime === true ) {console.log("THERE HAS BEEN A PERIOD OF SERVER DOWNTIME. POSITIONS CANNOT BE GUARANTEED. CLOSE TRADES OR MSG ME ON TELEGRAM. NO FURTHER TRADES WILL OPEN.");
-									return}
+		if (serverDowntime === true ) {
+			console.log("THERE HAS BEEN A PERIOD OF SERVER DOWNTIME. POSITIONS CANNOT BE GUARANTEED. CLOSE TRADES OR MSG ME ON TELEGRAM. NO FURTHER TRADES WILL OPEN.")
+			return;
+		}
 
 		openPrice = prices[__pairIndex]
 
 		console.log(JSON.stringify((web3[selectedProvider].utils.toHex(process.env.PUBLIC_KEY))));
 		console.log((web3[selectedProvider].utils.toHex(__pairIndex)).toString() )
 
-		positionSizeTP = 
-		positionSizeSL = ((process.env.TAKE_PROFIT_P/process.env.LEVERAGE_AMOUNT)/100)
-
-		let tradeTuple = [
-		(process.env.PUBLIC_KEY.toString()),
-		(parseInt(__pairIndex)).toString(),
-		(parseInt(0)).toString(), // index
-		parseInt(0).toString(), //initial pos token
-		parseInt(positionSize).toString(),// positionSizeDai
-		parseInt(openPrice*1e10).toString(),
-		long,
-		parseInt(process.env.LEVERAGE_AMOUNT).toString(),
-		parseInt(((openPrice + openPrice*((process.env.TAKE_PROFIT_P/process.env.LEVERAGE_AMOUNT)/100))) * 1e10).toString(),
-		parseInt(((openPrice - openPrice*((process.env.STOP_LOSS_P/process.env.LEVERAGE_AMOUNT)/100))) * 1e10).toString()
-		]
-
 		let spreadReductionId = 0
 
 		if (nfts.length > 0) { 
 			spreadReductionId = nfts[nfts.length-1].id
 		}
+
+		let tradeTuple = [
+			(process.env.PUBLIC_KEY.toString()),
+			(parseInt(__pairIndex)).toString(),
+			(parseInt(0)).toString(), // index
+			parseInt(0).toString(), //initial pos token
+			parseInt(positionSize).toString(),// positionSizeDai
+			parseInt(openPrice*1e10).toString(),
+			long,
+			parseInt(process.env.LEVERAGE_AMOUNT).toString(),
+			parseInt(((openPrice + openPrice*((process.env.TAKE_PROFIT_P/process.env.LEVERAGE_AMOUNT)/100))) * 1e10).toString(),
+			parseInt(((openPrice - openPrice*((process.env.STOP_LOSS_P/process.env.LEVERAGE_AMOUNT)/100))) * 1e10).toString()
+			]
 
 		var tx = {
 			from: process.env.PUBLIC_KEY,
