@@ -57,15 +57,15 @@ let daiContractSetup = false;
 // --------------------------------------------
 // 3. INIT: CHECK ENV VARS 
 // --------------------------------------------
-console.log("-------------------------------------------------------------------------------------------------------------")
-console.log("|初心   					                    gainsCUBE   				                              初心|");
-console.log("|                           Unofficial b-cube.ai signalz for gains.trade                                    |")
-console.log("|-----------------------------------------------------------------------------------------------------------|")
-console.log("|             Please leave dev_fee as 1% or greater. Signals worth > 350 EUR/mo. Consider 2%.               |")
-console.log("|-----------------------------------------------------------------------------------------------------------|")
-console.log("|  					BETA: ENSURE ADDRESS IS APPROVED FOR DAI ON GAINS.TRADE.                             |")
-console.log("|初心 					BETA: PLEASE MONITOR BOT AND POSITION SIZES AT THIS TIME.                         初心|")
-console.log("-------------------------------------------------------------------------------------------------------------")
+console.log("----------------------------------------------------------------------------------")
+console.log("|初心   					           gainsCUBE   				               初心|");
+console.log("|                     Unofficial b-cube.ai signalz for gains.trade               |")
+console.log("|--------------------------------------------------------------------------------|")
+console.log("| Please leave dev_fee as 1% or greater. Signals worth >350 EUR/mo. Consider 2%. |")
+console.log("|--------------------------------------------------------------------------------|")
+console.log("|            BETA: ENSURE ADDRESS IS APPROVED FOR DAI ON GAINS.TRADE.            |")
+console.log("|初心        BETA: PLEASE MONITOR BOT AND POSITION SIZES AT THIS TIME.        初心|")
+console.log("----------------------------------------------------------------------------------")
 
 if(!process.env.WSS_URLS || !process.env.PRICES_URL || !process.env.STORAGE_ADDRESS
 || !process.env.PUBLIC_KEY || !process.env.EVENT_CONFIRMATIONS_SEC 
