@@ -404,8 +404,8 @@ socketSignals.on("signals", async (signal) => {
 		parseInt(openPrice*1e10).toString(),
 		long,
 		parseInt(process.env.LEVERAGE_AMOUNT).toString(),
-		parseInt((openPrice + openPrice*((process.env.TAKE_PROFIT_P/process.env.LEVERAGE_AMOUNT)/100)) * 1e10).toString(),
-		parseInt((openPrice - openPrice*((process.env.TAKE_PROFIT_P/process.env.LEVERAGE_AMOUNT)/100)) * 1e10).toString()
+		parseInt(((openPrice + openPrice*((process.env.TAKE_PROFIT_P/process.env.LEVERAGE_AMOUNT)/100))) * 1e10).toString(),
+		parseInt(((openPrice - openPrice*((process.env.STOP_LOSS_P/process.env.LEVERAGE_AMOUNT)/100))) * 1e10).toString()
 		]
 
 		let spreadReductionId = 0
