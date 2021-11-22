@@ -14,14 +14,16 @@ Please leave dev_fee as 1% or greater. Signals worth > 350 EUR/mo. Consider 2%
  - Default dev_fee 2%                                                                                                                   
 
 ## Structure of heartbeat
-pair: The relevant crypto pair.
-direction: Whether it is a long or short strategby.
-e.g. {pair: 'btc' , direction: 'long'}
+- pair: The relevant crypto pair.
+- direction: Whether it is a long or short strategby.
+- e.g. {pair: 'btc' , direction: 'long'}
 
 ## Structure of signal
-
+- pair: The relevant crypto pair.
+- opentrade: If a trade is to be opened, true. If a trade is to be closed, false.
+- direction: If a trade is being opened, it will say the strategy, long or shiort. Closed trades do not have a direction.
 e.g. {pair: 'btc', opentrade: 'true', direction: 'short'} for opening a short trade on btc
-e.g. {pair: 'eth', opentrade: 'false', direction: 'long'} for closing ANY trade on eth.
+e.g. {pair: 'eth', opentrade: 'false'} for closing ANY trade on eth.
 
 
 ## Prior to running: 
