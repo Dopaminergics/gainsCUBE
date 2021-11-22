@@ -20,7 +20,6 @@ let pairList = ['btc','eth','link', 'doge', 'matic', 'ada', 'sushi', 'aave', 'al
 'audusd', 'eurchf', 'eurgbp', 'eurjpy', 'eurusd', 'gbpusd', 'nzdusd', 'usdcad', 'usdchf', 'usdjpy', 
 'luna', 'yfi', 'sol', 'xtz', 'bch', 'bnt', 'crv', 'dash','etc', 'icp', 'mkr', 'neo', 'theta', 'trx', 'zrx'];
 
-
 socketSignals.on("signals", async (p) => {
     console.log(p)
 }
@@ -53,7 +52,6 @@ let lockedDaiBalance;
 
 let wssConnected = false;
 let daiContractSetup = false;
-
 // --------------------------------------------
 // 3. INIT: CHECK ENV VARS 
 // --------------------------------------------
@@ -430,18 +428,22 @@ socketSignals.on("signals", async (signal) => {
 
     } else {
 
+		if (activePositions.some(item => item.pair === pairName)) {
 
-        var tx = {
-            from: process.env.PUBLIC_KEY,
-            to : tradingAddress,
-            data : tradingContract.methods.closeTradeMarket(
-                web3[selectedProvider].utils.toHex(__pairIndex), // Pair index
-                web3[selectedProvider].utils.toHex(0) //userTradesIndex 
-                ).encodeABI(),
-            gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
-            gas: web3[selectedProvider].utils.toHex("6400000")
-                };
-
+			var tx = {
+				from: process.env.PUBLIC_KEY,
+				to : tradingAddress,
+				data : tradingContract.methods.closeTradeMarket(
+					web3[selectedProvider].utils.toHex(__pairIndex), // Pair index
+					web3[selectedProvider].utils.toHex(0) //userTradesIndex 
+					).encodeABI(),
+				gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
+				gas: web3[selectedProvider].utils.toHex("6400000")
+					};
+		} else {
+			console.log("There is no local position open to close. The server closed the position on " + pairName.toUppercase() + ".")
+			return;
+		}
 
     }
 
@@ -454,7 +456,7 @@ socketSignals.on("signals", async (signal) => {
                         console.log("Triggered open position on pair: " + __pairIndex + ". Direction was long:" + long)
 
                         activePositions.splice(__pairIndex, 1, { pair: pairList[__pairIndex], strategyOpen: true, strategyDirection: 'long'});
-						
+
                         console.log("Active position at pair " + pairList[__pairIndex] + " now: " + activePositions[__pairIndex])
                     } else { 
                         console.log("Triggered close position on pair: " + pairList[__pairIndex])
