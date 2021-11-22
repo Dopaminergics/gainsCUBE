@@ -1,4 +1,5 @@
-初心 SHOSHIN b-cube.ai => gains.trade signals bot 初心                                            
+**初心 gainsCUBE 初心  **                        
+b-cube.ai => gains.trade signals bot              
 --------------------------------------------------------------------------------
 BETA: ENSURE ADDRESS IS APPROVED FOR DAI ON GAINS.TRADE. THIS WILL BE BUILT IN FOR FULL RELEASE. 
 BETA:   PLEASE MONITOR THE BOT AND POSITIONS AT THIS STAGE.    
