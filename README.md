@@ -13,6 +13,17 @@ Please leave dev_fee as 1% or greater. Signals worth > 350 EUR/mo. Consider 2%
  - Refer to BCUBE Website: XRP Short Term Bot.                                                            
  - Default dev_fee 2%                                                                                                                   
 
+## Structure of heartbeat
+pair: The relevant crypto pair.
+direction: Whether it is a long or short strategby.
+e.g. {pair: 'btc' , direction: 'long'}
+
+## Structure of signal
+
+e.g. {pair: 'btc', opentrade: 'true', direction: 'short'} for opening a short trade on btc
+e.g. {pair: 'eth', opentrade: 'false', direction: 'long'} for closing ANY trade on eth.
+
+
 ## Prior to running: 
 1. Create a .env file using the example supplied in .env-example and fill in variables
 
