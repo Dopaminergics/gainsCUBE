@@ -1,7 +1,5 @@
-## 初心 SHOSHIN b-cube.ai => gains.trade signals bot 初心                
-                       
-Please leave dev_fee as 1% or greater. 
-Signals worth > 350 EUR/mo. Consider 2%.              
+## 初心 SHOSHIN b-cube.ai => gains.trade signals bot 初心                                     
+**Please leave dev_fee as 1% or greater. Signals worth > 350 EUR/mo. Consider 2%.**              
 --------------------------------------------------------------------------------
 BETA: ENSURE ADDRESS IS APPROVED FOR DAI ON GAINS.TRADE. THIS WILL BE BUILT IN FOR FULL RELEASE. 
 BETA:   PLEASE MONITOR THE BOT AND POSITIONS AT THIS STAGE.    
