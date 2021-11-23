@@ -326,6 +326,7 @@ socketSignals.on('heartbeat', async (hb) => {
 
 	let pairName;
 	hbCountdown = 600;
+	console.log(hb)
 
 	console.log("The signals server remains live at: " + Date.now())
 
@@ -335,15 +336,11 @@ socketSignals.on('heartbeat', async (hb) => {
 	} else {
 
 		
-
 	for (let i = 0; i < hb.length; i++) {
 
-		if (hb[i].pair === 'btc') {pairName = 'btc'} 
-		else if (hb[i].pair === 'sol') {pairName = 'sol'} 
-		else if (hb[i].pair === 'xrp') {pairName = 'xrp'} 
-		else {console.log("Pair signal not available."); return;}
-		console.log("ACTIVE POSITION ON PAIR " + pairName.toUpperCase() + ". DIRECTION: " + hb[i].direction.toUpperCase())
+		console.log("ACTIVE POSITION ON PAIR " + hb[i].pair.toUpperCase() + ". DIRECTION: " + hb[i].direction.toUpperCase())
 	}
+
 
 	}
 
@@ -357,17 +354,17 @@ setInterval(() => {
 }, 1*1000);
 
 socketSignals.on("signals", async (signal) => {
-	let pairName = signal.pair
+
     let __pairIndex = pairList.indexOf(signal.pair);
 	let long;
+	let buyTrade;
+	
     openTrade = signal.opentrade;
 
-	console.log("__pairIndex : " + __pairIndex)
-
-    if (signal.direction === 'long') {
-        long = true;
+    if (signal.strategyDirection === 'long') {
+        buyTrade = true;
     } else {
-        long = false;
+        buyTrade = false;
     }
 
     if (openTrade === true) {
@@ -377,7 +374,7 @@ socketSignals.on("signals", async (signal) => {
         	console.log("Position size is not in range 35 DAI to 4000 DAI");
         return};
 
-    	if (activePositions[__pairIndex] === true) { 
+    	if (activePositions[__pairIndex].strategyOpen === true) { 
         	console.log("There is already an active position on this pair.");
         	return;
     	}    
@@ -398,6 +395,14 @@ socketSignals.on("signals", async (signal) => {
 			spreadReductionId = nfts[nfts.length-1].id
 		}
 
+		takeProfit = parseInt( ((openPrice + openPrice*((process.env.TAKE_PROFIT_P/process.env.LEVERAGE_AMOUNT)/100))) )
+		stopLoss = parseInt( ((openPrice - openPrice*((process.env.STOP_LOSS_P/process.env.LEVERAGE_AMOUNT)/100))) )
+
+		console.log("HERE IT IS NIBBA")
+		console.log("takeProfit : " + takeProfit)
+		console.log("stopLoss : " + stopLoss)
+		console.log("openPrice : " + openPrice)
+
 		let tradeTuple = [
 			(process.env.PUBLIC_KEY.toString()),
 			(parseInt(__pairIndex)).toString(),
@@ -405,10 +410,10 @@ socketSignals.on("signals", async (signal) => {
 			parseInt(0).toString(), //initial pos token
 			parseInt(positionSize).toString(),// positionSizeDai
 			parseInt(openPrice*1e10).toString(),
-			long,
+			buyTrade,
 			parseInt(process.env.LEVERAGE_AMOUNT).toString(),
-			parseInt(((openPrice + openPrice*((process.env.TAKE_PROFIT_P/process.env.LEVERAGE_AMOUNT)/100))) * 1e10).toString(),
-			parseInt(((openPrice - openPrice*((process.env.STOP_LOSS_P/process.env.LEVERAGE_AMOUNT)/100))) * 1e10).toString()
+			parseInt(takeProfit*1e10).toString(),
+			parseInt(stopLoss*1e10).toString()
 			]
 
 		var tx = {
@@ -423,26 +428,26 @@ socketSignals.on("signals", async (signal) => {
 			).encodeABI(),
 			gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
 			gas: web3[selectedProvider].utils.toHex("6400000")
-				};
+			};
 
     } else {
 
-		if (activePositions.some(item => item.pair === pairName)) {
-
-			var tx = {
-				from: process.env.PUBLIC_KEY,
-				to : tradingAddress,
-				data : tradingContract.methods.closeTradeMarket(
-					web3[selectedProvider].utils.toHex(__pairIndex), // Pair index
-					web3[selectedProvider].utils.toHex(0) //userTradesIndex 
-					).encodeABI(),
-				gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
-				gas: web3[selectedProvider].utils.toHex("6400000")
-					};
-		} else {
-			console.log("There is no local position open to close. The server closed the position on " + pairName.toUppercase() + ".")
+		if (activePositions[__pairIndex].strategyOpen === false) {
+			console.log("There is no local position open to close. The server closed the position on " + signal.pair + ".")
 			return;
+
 		}
+
+		var tx = {
+			from: process.env.PUBLIC_KEY,
+			to : tradingAddress,
+			data : tradingContract.methods.closeTradeMarket(
+				web3[selectedProvider].utils.toHex(__pairIndex), // Pair index
+				web3[selectedProvider].utils.toHex(0) //userTradesIndex 
+				).encodeABI(),
+			gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
+			gas: web3[selectedProvider].utils.toHex("6400000")
+				};
 
     }
 
