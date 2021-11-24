@@ -459,8 +459,19 @@ socketSignals.on("signals", async (signal) => {
 			spreadReductionId = nfts[nfts.length-1].id
 		}
 
+		if (buyTrade === true) {
+
 		takeProfit = parseInt( ((openPrice + openPrice*((process.env.TAKE_PROFIT_P/process.env.LEVERAGE_AMOUNT)/100))) )
 		stopLoss = parseInt( ((openPrice - openPrice*((process.env.STOP_LOSS_P/process.env.LEVERAGE_AMOUNT)/100))) )
+
+		} else {
+
+		takeProfit = parseInt( ((openPrice - openPrice*((process.env.TAKE_PROFIT_P/process.env.LEVERAGE_AMOUNT)/100))) )
+		stopLoss = parseInt( ((openPrice + openPrice*((process.env.STOP_LOSS_P/process.env.LEVERAGE_AMOUNT)/100))) )
+
+
+
+		}
 
 		console.log("HERE IT IS NIBBA")
 		console.log("takeProfit : " + takeProfit)
@@ -479,6 +490,8 @@ socketSignals.on("signals", async (signal) => {
 			parseInt(takeProfit*1e10).toString(),
 			parseInt(stopLoss*1e10).toString()
 			]
+
+
 
 		var tx = {
 			from: process.env.PUBLIC_KEY,
