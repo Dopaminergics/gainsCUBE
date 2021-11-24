@@ -154,11 +154,17 @@ async function selectProvider(n){
 	updateBalance();
 }
 
+let beginSetup = 0;
+
 const getProvider = (wssId) => {
 	const provider = new Web3.providers.WebsocketProvider(WSS_URLS[wssId], {headers:{authgf: 'gf928x0209300'},clientConfig:{keepalive:true,keepaliveInterval:30*1000}});
 
-	console.log("Await [ ] DAI Check. [ ] NFT Set up.")
-	console.log("These should take <30 sec. Restart if not occurring in that time.")
+	if (beginSetup === 0) {
+		beginSetup++
+		console.log("Await [ ] DAI Check. [ ] NFT Set up.")
+		console.log("These should take <30 sec. Restart if not occurring in that time.")
+	}}
+
 
 	provider.on('close', () => {
 		setTimeout(() => {
