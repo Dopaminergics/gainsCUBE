@@ -1,5 +1,5 @@
 // ------------------------------------
-// 1. DEPENDENCIES
+// 1. DEPENDENCIES 
 // ------------------------------------
 
 require("dotenv").config();
@@ -20,12 +20,6 @@ let pairList = ['btc','eth','link', 'doge', 'matic', 'ada', 'sushi', 'aave', 'al
 'audusd', 'eurchf', 'eurgbp', 'eurjpy', 'eurusd', 'gbpusd', 'nzdusd', 'usdcad', 'usdchf', 'usdjpy', 
 'luna', 'yfi', 'sol', 'xtz', 'bch', 'bnt', 'crv', 'dash','etc', 'icp', 'mkr', 'neo', 'theta', 'trx', 'zrx'];
 
-socketSignals.on("signals", async (p) => {
-    console.log(p)
-}
-
-);
-
 // -----------------------------------------
 // 2. GLOBAL VARIABLES
 // -----------------------------------------
@@ -43,13 +37,13 @@ const DAI_ABI = [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"ad
 let selectedProvider = null, eventSubTrading = null, eventSubCallbacks = null, nonce = null,
 	providers = [], web3 = [], openTrades = [], pairs = [], openInterests = [], nfts = [], nftsBeingUsed = [],
 	storageContract, tradingContract, tradingAddress, aggregatorContract, callbacksContract, vaultContract,
-	nftTimelock, maxTradesPerPair, daiContract,
+	nftTimelock, maxTradesPerPair, daiContract, allowedDai, 
 	nftContract1, nftContract2, nftContract3, nftContract4, nftContract5, linkContract;
 
 
 let daiBalance = 0;
 let lockedDaiBalance;
-
+let nftSetup = false;
 let wssConnected = false;
 let daiContractSetup = false;
 // --------------------------------------------
@@ -60,8 +54,6 @@ console.log("|初心                                 gainsCUBE                  
 console.log("|                     Unofficial b-cube.ai signalz for gains.trade               |")
 console.log("|--------------------------------------------------------------------------------|")
 console.log("| Please leave dev_fee as 1% or greater. Signals worth >350 EUR/mo. Consider 2%. |")
-console.log("|--------------------------------------------------------------------------------|")
-console.log("|            BETA: ENSURE ADDRESS IS APPROVED FOR DAI ON GAINS.TRADE.            |")
 console.log("|初心        BETA: PLEASE MONITOR BOT AND POSITION SIZES AT THIS TIME.        初心|")
 console.log("----------------------------------------------------------------------------------")
 
@@ -74,8 +66,45 @@ if(!process.env.WSS_URLS || !process.env.PRICES_URL || !process.env.STORAGE_ADDR
 }
 
 // -----------------------------------------
-// 4. WEB3 PROVIDER
+// 4. WEB3 PROVIDER & CHECK DAI ALLOWANCE
 // -----------------------------------------
+
+
+async function checkDAIAllowance(){
+	if (!daiContractSetup) {return}
+	web3[selectedProvider].eth.net.isListening().then(async () => {
+		const allowance = await daiContract.methods.allowance(process.env.PUBLIC_KEY, process.env.STORAGE_ADDRESS).call();
+		if(parseFloat(allowance) > 0){
+			allowedDai = true;
+			console.log("DAI allowance OK.");
+		}else{
+			console.log("DAI not allowed, approving now.");
+			const tx = {
+				from: process.env.PUBLIC_KEY,
+			    to : daiContract.options.address,
+			    data : daiContract.methods.approve(process.env.STORAGE_ADDRESS, "115792089237316195423570985008687907853269984665640564039457584007913129639935").encodeABI(),
+			    gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
+			    gas: web3[selectedProvider].utils.toHex("100000")
+			};
+
+			web3[selectedProvider].eth.accounts.signTransaction(tx, process.env.PRIVATE_KEY).then(signed => {
+			    web3[selectedProvider].eth.sendSignedTransaction(signed.rawTransaction)
+			    .on('receipt', () => {
+					console.log("DAI successfully approved.");
+					allowedDai = true;
+			    }).on('error', (e) => {
+			    	console.log("DAI approve tx fail (" + e + ")");
+					setTimeout(() => { checkDAIAllowance(); }, 2*1000);
+			    });
+			}).catch(e => {
+				console.log("DAI approve tx fail (" + e + ")");
+				setTimeout(() => { checkDAIAllowance(); }, 2*1000);
+			});
+		}
+	}).catch(() => {
+		setTimeout(() => { checkDAIAllowance(); }, 5*1000);
+	});
+}
 
 const WSS_URLS = process.env.WSS_URLS.split(",");
 
@@ -116,6 +145,8 @@ async function selectProvider(n){
 	eventSubTrading = null;
 	eventSubCallbacks = null;
 
+	await checkDAIAllowance();
+	await fetchNFTs();
 	updateBalance();
 }
 
@@ -140,6 +171,7 @@ const getProvider = (wssId) => {
 				}else if(connectedProvider === -1 && selectedProvider === wssId){
 					console.log("No WSS to switch to...");
 					wssConnected = false;
+					
 				}
 
 				providers[wssId] = getProvider(wssId);
@@ -163,6 +195,7 @@ const getProvider = (wssId) => {
 					selectProvider(wssId);
 					console.log("Switched to WSS " + WSS_URLS[selectedProvider]);
 					wssConnected = true;
+					checkDAIAllowance();
 				}else{
 					console.log("No need to switch WSS, already connected to " + WSS_URLS[selectedProvider]);
 					wssConnected = true;
@@ -219,11 +252,8 @@ setInterval(() => {
 // 5. FETCH PAIRS, NFTS, AND NFT TIMELOCK
 // -----------------------------------------
 
-async function fetchTradingVariables(){
+async function fetchNFTs(){
 	web3[selectedProvider].eth.net.isListening().then(async () => {
-		const maxPerPair = await storageContract.methods.maxTradesPerPair().call();
-		const nftSuccessTimelock = await storageContract.methods.nftSuccessTimelock().call();
-		const pairsCount = await aggregatorContract.methods.pairsCount().call();
 		nfts = [];
 
 		const nftsCount1 = await nftContract1.methods.balanceOf(process.env.PUBLIC_KEY).call();
@@ -254,12 +284,17 @@ async function fetchTradingVariables(){
 		}
 
 		if (nfts.length > 0) {
+		console.log("")
 		console.log("NFT FOR USE IN SPREAD REDUCTION - ID: " + nfts[nfts.length-1].id + ". TYPE: " + nfts[nfts.length-1].type)
-		} else {console.log("No NFT for spread reduction.")}
+		} else {
+			console.log("");
+			console.log("Having an NFT on the account will give spread reduction.")}
 
 		;
+
+		nftSetup = true;
 	}).catch(() => {
-		
+		setTimeout(() => { fetchNFTs(); }, 2*1000);
 	});
 }
 
@@ -283,8 +318,6 @@ function wssPriceFeed(){
 wssPriceFeed();
 
 async function updateBalance() {
-
-	console.log("Update balance starting")
 	if (wssConnected === false) { 
 		console.log("WSS Not connected");
 	return
@@ -295,13 +328,19 @@ async function updateBalance() {
 		return}
 
     _daiBalance = await daiContract.methods.balanceOf(process.env.PUBLIC_KEY).call();
-    console.log("The DAI token balance is:" + web3[selectedProvider].utils.fromWei(_daiBalance, "ether" ));
+	console.log("")
+    console.log("DAI token balance: " + web3[selectedProvider].utils.fromWei(_daiBalance, "ether" ));
     daiBalance = parseInt(_daiBalance);
     positionSize = parseInt((_daiBalance-(1*1e18))*(process.env.CAPITAL_PER_POSITION_P/100)) // Take 0.1 dai off _daiBalance to avoid rounding errors and take the position size percentage.
+
+	if (positionSize < web3[selectedProvider].utils.toWei("35", "ether") || positionSize > web3[selectedProvider].utils.toWei("4000", "ether")) {
+        
+		console.log("Position size is not in range 35 DAI to 4000 DAI");
+	return};
+
     console.log("The position size will be:" + web3[selectedProvider].utils.fromWei(positionSize.toString(), "ether" ));
+	console.log(("1 DAI is removed from percentage calculation to avoid any rounding issues."))
 }
-
-
 
 // ---------------------------------------------
 // 5. TRIGGER ORDERS
@@ -321,29 +360,39 @@ function pairStrat(pair) {
 
 let hbCountdown = 600;
 let serverDowntime = false;
+let hbPrintControl = 0;
+let firstRun = 0;
 
 socketSignals.on('heartbeat', async (hb) => {
-
-	let pairName;
 	hbCountdown = 600;
-	console.log(hb)
 
-	console.log("The signals server remains live at: " + Date.now())
+	if (!allowedDai || !daiContractSetup || !nftSetup ) {return} else {
+
+	if (firstRun === 0) {
+		firstRun++
+		console.log("[X] Dai Checked. [X] NFTs set up.")
+		console.log("Server is live - await opening of position. (AI waits for the best time to open, sometimes >24 hrs.)")
+		console.log("So please be patient, and no trading mechanism is perfect. Be responsible.")
+	}}
+
+	hbPrintControl++;
+	if (hbPrintControl > 4) {
+		hbPrintControl = 0;
+
+		console.log("The signals server remains live at: " + Date.now())
 
 	if (hb.length === 0 ) {
 
 		console.log("There are no open strategies at present.")
 	} else {
-
 		
 	for (let i = 0; i < hb.length; i++) {
-
-		console.log("ACTIVE POSITION ON PAIR " + hb[i].pair.toUpperCase() + ". DIRECTION: " + hb[i].direction.toUpperCase())
+		console.log("SERVER HAS ACTIVE POSITION ON PAIR " + hb[i].pair.toUpperCase() + ". DIRECTION: " + hb[i].direction.toUpperCase())
 	}
 
-
 	}
 
+}
 })
 
 setInterval(() => {
@@ -354,6 +403,8 @@ setInterval(() => {
 }, 1*1000);
 
 socketSignals.on("signals", async (signal) => {
+
+	if (!allowedDai) {return}
 
     let __pairIndex = pairList.indexOf(signal.pair);
 	let long;
