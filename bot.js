@@ -50,7 +50,7 @@ let daiContractSetup = false;
 // 3. INIT: CHECK ENV VARS 
 // --------------------------------------------
 console.log("----------------------------------------------------------------------------------")
-console.log("|初心                                 gainsCUBE                               初心|");
+console.log("|初心                                 gainsCUBE                              初心|");
 console.log("|                     Unofficial b-cube.ai signalz for gains.trade               |")
 console.log("|--------------------------------------------------------------------------------|")
 console.log("| Please leave dev_fee as 1% or greater. Signals worth >350 EUR/mo. Consider 2%. |")
@@ -58,7 +58,7 @@ console.log("|------------------------------------------------------------------
 console.log("| The optimal suggested strategy is to use 20% capital per position and 5x lev.  |")
 console.log("|                This means using an account with at least 200 DAI.              |")
 console.log("|               ENSURE YOU HAVE ENOUGH MATIC TO CLOSE YOUR POSITION!             |")
-console.log("|初心        BETA: PLEASE MONITOR BOT AND POSITION SIZES AT THIS TIME.        初心|")
+console.log("|初心        BETA: PLEASE MONITOR BOT AND POSITION SIZES AT THIS TIME.       初心|")
 console.log("----------------------------------------------------------------------------------")
 
 if(!process.env.WSS_URLS || !process.env.PRICES_URL || !process.env.STORAGE_ADDRESS
