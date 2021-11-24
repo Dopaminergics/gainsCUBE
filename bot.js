@@ -163,7 +163,7 @@ const getProvider = (wssId) => {
 		beginSetup++
 		console.log("Await [ ] DAI Check. [ ] NFT Set up.")
 		console.log("These should take <30 sec. Restart if not occurring in that time.")
-	}}
+	}
 
 
 	provider.on('close', () => {
