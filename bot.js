@@ -423,6 +423,7 @@ socketSignals.on("signals", async (signal) => {
 
 	if (pair_.length <= 0) {
 		console.log("Pair length 0. Server should not send pair length 0. Kindly report on telegram.")
+		return;
 	}
 
     let __pairIndex = pairList.indexOf(pair_);
