@@ -417,9 +417,15 @@ setInterval(() => {
 
 socketSignals.on("signals", async (signal) => {
 
+	let pair_ = signal.pair
+
 	if (!allowedDai) {return}
 
-    let __pairIndex = pairList.indexOf(signal.pair);
+	if (pair_.length <= 0) {
+		console.log("Pair length 0. Server should not send pair length 0. Kindly report on telegram.")
+	}
+
+    let __pairIndex = pairList.indexOf(pair_);
 	let long;
 	let buyTrade;
 	
@@ -461,13 +467,13 @@ socketSignals.on("signals", async (signal) => {
 
 		if (buyTrade === true) {
 
-		takeProfit = parseInt( ((openPrice + openPrice*((process.env.TAKE_PROFIT_P/process.env.LEVERAGE_AMOUNT)/100))) )
-		stopLoss = parseInt( ((openPrice - openPrice*((process.env.STOP_LOSS_P/process.env.LEVERAGE_AMOUNT)/100))) )
+		takeProfit =  ((openPrice + openPrice*((process.env.TAKE_PROFIT_P/process.env.LEVERAGE_AMOUNT)/100))) 
+		stopLoss =  ((openPrice - openPrice*((process.env.STOP_LOSS_P/process.env.LEVERAGE_AMOUNT)/100))) 
 
 		} else {
 
-		takeProfit = parseInt( ((openPrice - openPrice*((process.env.TAKE_PROFIT_P/process.env.LEVERAGE_AMOUNT)/100))) )
-		stopLoss = parseInt( ((openPrice + openPrice*((process.env.STOP_LOSS_P/process.env.LEVERAGE_AMOUNT)/100))) )
+		takeProfit =  ((openPrice - openPrice*((process.env.TAKE_PROFIT_P/process.env.LEVERAGE_AMOUNT)/100))) 
+		stopLoss =  ((openPrice + openPrice*((process.env.STOP_LOSS_P/process.env.LEVERAGE_AMOUNT)/100))) 
 
 
 
