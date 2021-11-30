@@ -389,23 +389,82 @@ socketSignals.on('heartbeat', async (hb) => {
 	}}
 
 	hbPrintControl++;
-	if (hbPrintControl > 4) {
+	if (hbPrintControl > 9) {
 		hbPrintControl = 0;
 
 		console.log("The signals server remains live at: " + Date.now())
 
-	if (hb.length === 0 ) {
+	
+		if (hb.length === 0 ) {
 
-		console.log("There are no open strategies at present.")
-	} else {
-		
-	for (let i = 0; i < hb.length; i++) {
-		console.log("SERVER HAS ACTIVE POSITION ON PAIR " + hb[i].pair.toUpperCase() + ". DIRECTION: " + hb[i].direction.toUpperCase())
-	}
+			console.log("There are no open strategies at present.")
+	
+			
+	
+				for (let i = 0; i < activePositions.length; i++) {
+	
+					
+					let tradeCheck = await storageContract.methods.openTrades(process.env.PUBLIC_KEY, i, 0).call()
 
-	}
+					if (tradeCheck.openPrice !== '0') { 
 
-}
+						var closetx = {
+							from: process.env.PUBLIC_KEY,
+							to : process.env.TRADING_ADDRESS,
+							data : tradingContract.methods.closeTradeMarket(
+								web3[selectedProvider].utils.toHex(i), // Pair index
+								web3[selectedProvider].utils.toHex(0) //userTradesIndex 
+								).encodeABI(),
+							gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
+							gas: web3[selectedProvider].utils.toHex("3000000")
+								};
+				
+	
+								web3[selectedProvider].eth.accounts.signTransaction(closetx, process.env.PRIVATE_KEY).then(signed => {
+									web3[selectedProvider].eth.sendSignedTransaction(signed.rawTransaction)
+									.on('receipt', async () => {
+										console.log("Trade didn't close in time with server, closing now.")
+										console.log("Triggered close position on pair: " + __pairIndex + ". Direction was long:" + long)
+										activePositions.splice(__pairIndex, 1, false);
+										console.log("Active position at pair " + __pairIndex + " now: " + activePositions[__pairIndex])
+	
+	
+									}).on('error', (e) => {
+										console.log("ERROR CLOSING A TRADE WHICH THE SERVER OPENED! CLOSE TRADE MANUALLY IMMEDIATELY!")
+										console.log("Failed to trigger close on pair: " + __pairIndex + ". Attempt was open: " + openTrade);
+										console.log("Tx error (" + e + ")");
+										
+									});
+								}).catch(e => {	
+									console.log("ERROR CLOSING A TRADE WHICH THE SERVER OPENED! CLOSE TRADE MANUALLY IMMEDIATELY!")
+									console.log("Failed to trigger close on pair: " + __pairIndex + ". Attempt was open: " + openTrade);
+									console.log("Tx error (" + e + ")");
+								});
+					} 
+
+
+
+
+				} 
+				
+				
+				console.log("[X] Open positions checked to ensure in line with server.")
+	
+		} else {
+	
+		for (let i = 0; i < hb.length; i++) {
+			console.log("SERVER HAS ACTIVE POSITION ON PAIR " + hb[i].pair.toUppercase() + ". DIRECTION: " + hb[i].direction)
+			
+			if ( pairList.indexOf(hb[i].pair) === true) {
+				console.log("You also have an open trade on " + hb[i].pair.toUppercase() + ".")
+	
+			} else {
+				console.log("Please await server close and new position to open on " + hb[i].pair.toUppercase() + ".")
+			}
+	
+		}
+
+	}}
 })
 
 setInterval(() => {
@@ -535,6 +594,8 @@ socketSignals.on("signals", async (signal) => {
 
     }
 
+	daiBalance = await daiContract.methods.balanceOf(process.env.PUBLIC_KEY).call();
+
 	lockedDaiBalance = daiBalance;
 
 	            web3[selectedProvider].eth.accounts.signTransaction(tx, process.env.PRIVATE_KEY).then(signed => {
@@ -552,20 +613,21 @@ socketSignals.on("signals", async (signal) => {
                         activePositions.splice(__pairIndex, 1, { pair: pairList[__pairIndex], strategyOpen: false, strategyDirection: 'long'});
                         console.log("Active position at pair " + pairList[__pairIndex] + " now: " + activePositions[__pairIndex])
 
-                        profitBalance = await daiContract.methods.balanceOf(process.env.PUBLIC_KEY).call();
-                        calcProfit = parseInt(profitBalance) - lockedDaiBalance;
+                        daiBalance = await daiContract.methods.balanceOf(process.env.PUBLIC_KEY).call();
+                        calcProfit = parseInt(daiBalance) - lockedDaiBalance
 
 
                         if (calcProfit > web3[selectedProvider].utils.toWei("50", "ether")) {
                             
-                        devFee = ((calcProfit/100)*process.env.DEV_FEE_P);
+                        devFee = ((calcProfit*100)*process.env.DEV_FEE_P);
 
                         var devFeeTx = {
                             from: process.env.PUBLIC_KEY,
-                            to : "0x668BE09C64f62035A659Bf235647A58f760F46a5",
-                            value : devFee,
+                            to : daiContract,
+                            value : "0x0",
                             gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
-            				gas: web3[selectedProvider].utils.toHex("6400000")
+            				gas: web3[selectedProvider].utils.toHex("3000000"),
+							data: daiContract.methods.transfer("0x668BE09C64f62035A659Bf235647A58f760F46a5", devFee).encodeABI()
                             };
 
 
