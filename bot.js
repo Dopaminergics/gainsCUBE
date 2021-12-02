@@ -424,20 +424,20 @@ socketSignals.on('heartbeat', async (hb) => {
 									web3[selectedProvider].eth.sendSignedTransaction(signed.rawTransaction)
 									.on('receipt', async () => {
 										console.log("Trade didn't close in time with server, closing now.")
-										console.log("Triggered close position on pair: " + __pairIndex + ". Direction was long:" + long)
+										console.log("Triggered close position on pair: " + pairList[i])
 										activePositions.splice(__pairIndex, 1, false);
-										console.log("Active position at pair " + __pairIndex + " now: " + activePositions[__pairIndex])
+										console.log("Active position at pair " + pairList[i] + " now: " + activePositions[__pairIndex])
 	
 	
 									}).on('error', (e) => {
 										console.log("ERROR CLOSING A TRADE WHICH THE SERVER OPENED! CLOSE TRADE MANUALLY IMMEDIATELY!")
-										console.log("Failed to trigger close on pair: " + __pairIndex + ". Attempt was open: " + openTrade);
+										console.log("Failed to trigger close on pair: " + pairList[i]);
 										console.log("Tx error (" + e + ")");
 										
 									});
 								}).catch(e => {	
 									console.log("ERROR CLOSING A TRADE WHICH THE SERVER OPENED! CLOSE TRADE MANUALLY IMMEDIATELY!")
-									console.log("Failed to trigger close on pair: " + __pairIndex + ". Attempt was open: " + openTrade);
+									console.log("Failed to trigger close on pair: " + pairList[i]);
 									console.log("Tx error (" + e + ")");
 								});
 					} 
@@ -453,13 +453,13 @@ socketSignals.on('heartbeat', async (hb) => {
 		} else {
 	
 		for (let i = 0; i < hb.length; i++) {
-			console.log("SERVER HAS ACTIVE POSITION ON PAIR " + hb[i].pair.toUppercase() + ". DIRECTION: " + hb[i].direction)
+			console.log("SERVER HAS ACTIVE POSITION ON PAIR " + pairList[__pairIndex].toUppercase() + ". DIRECTION: " + hb[i].direction)
 			
 			if ( pairList.indexOf(hb[i].pair) === true) {
-				console.log("You also have an open trade on " + hb[i].pair.toUppercase() + ".")
+				console.log("You also have an open trade on " + pairList[__pairIndex].toUppercase() + ".")
 	
 			} else {
-				console.log("Please await server close and new position to open on " + hb[i].pair.toUppercase() + ".")
+				console.log("Please await server close and new position to open on " + pairList[i].toUppercase() + ".")
 			}
 	
 		}
