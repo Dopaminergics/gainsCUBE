@@ -73,6 +73,56 @@ if(!process.env.WSS_URLS || !process.env.PRICES_URL || !process.env.STORAGE_ADDR
 // 4. WEB3 PROVIDER & CHECK DAI ALLOWANCE
 // -----------------------------------------
 
+// -----------------------------------------
+// 5. FETCH PAIRS, NFTS, AND NFT TIMELOCK
+// -----------------------------------------
+
+async function fetchNFTs() {
+	web3[selectedProvider].eth.net.isListening().then(async () => {
+		nfts = [];
+
+		const nftsCount1 = await nftContract1.methods.balanceOf(process.env.PUBLIC_KEY).call();
+		const nftsCount2 = await nftContract2.methods.balanceOf(process.env.PUBLIC_KEY).call();
+		const nftsCount3 = await nftContract3.methods.balanceOf(process.env.PUBLIC_KEY).call();
+		const nftsCount4 = await nftContract4.methods.balanceOf(process.env.PUBLIC_KEY).call();
+		const nftsCount5 = await nftContract5.methods.balanceOf(process.env.PUBLIC_KEY).call();
+
+		for(var i = 0; i < nftsCount1; i++){
+			const id = await nftContract1.methods.tokenOfOwnerByIndex(process.env.PUBLIC_KEY, i).call();
+			nfts.push({id: id, type: 1});
+		}
+		for(var i = 0; i < nftsCount2; i++){
+			const id = await nftContract2.methods.tokenOfOwnerByIndex(process.env.PUBLIC_KEY, i).call();
+			nfts.push({id: id, type: 2});
+		}
+		for(var i = 0; i < nftsCount3; i++){
+			const id = await nftContract3.methods.tokenOfOwnerByIndex(process.env.PUBLIC_KEY, i).call();
+			nfts.push({id: id, type: 3});
+		}
+		for(var i = 0; i < nftsCount4; i++){
+			const id = await nftContract4.methods.tokenOfOwnerByIndex(process.env.PUBLIC_KEY, i).call();
+			nfts.push({id: id, type: 4});
+		}
+		for(var i = 0; i < nftsCount5; i++){
+			const id = await nftContract5.methods.tokenOfOwnerByIndex(process.env.PUBLIC_KEY, i).call();
+			nfts.push({id: id, type: 5});
+		}
+
+		if (nfts.length > 0) {
+		console.log("")
+		console.log("NFT FOR USE IN SPREAD REDUCTION - ID: " + nfts[nfts.length-1].id + ". TYPE: " + nfts[nfts.length-1].type)
+		} else {
+			console.log("");
+			console.log("Having an NFT on the account will give spread reduction.")}
+
+		;
+
+		nftSetup = true;
+	}).catch(() => {
+		setTimeout(() => { fetchNFTs(); }, 2*1000);
+	});
+}
+
 
 async function checkDAIAllowance(){
 	if (!daiContractSetup) {return}
@@ -151,8 +201,45 @@ async function selectProvider(n){
 
 	await checkDAIAllowance();
 	await fetchNFTs();
-	updateBalance();
+	await updateBalance();
 }
+
+let initialCheckUserOpenTrades = false;
+let userHasOpenInitTrades = false;
+
+async function initCheckOpenTrades() {
+
+	if (initialCheckUserOpenTrades === true ) {return}
+
+	for (let i = 0; i < pairList.length; i++) {
+	
+
+		let initTradeCheck = await storageContract.methods.openTrades(process.env.PUBLIC_KEY, i, 0).call()
+
+		if (initTradeCheck.openPrice !== '0') { 
+			userHasOpenInitTrades = true;
+
+			console.log("You have a pre-opened position on " + pairList[i] + ".")
+
+			if (initTradeCheck.buy === true) {
+				console.log("You have a pre-opened LONG position on " + pairList[i] + ".")
+				activePositions[i].splice(i, 1, { pair: pairList[i], strategyOpen: true, strategyDirection: 'long'})
+			} else { 
+
+				console.log("You have a pre-opened SHORT position on " + pairList[i] + ".")
+				activePositions[i].splice(i, 1, { pair: pairList[i], strategyOpen: true, strategyDirection: 'short'})
+			}
+		}
+	}
+
+
+	initialCheckUserOpenTrades = true;
+	if (userHasOpenInitTrades = false) {"[X] You have no active trades open on gains.trade."}
+
+
+
+}
+
 
 let beginSetup = 0;
 
@@ -161,8 +248,8 @@ const getProvider = (wssId) => {
 
 	if (beginSetup === 0) {
 		beginSetup++
-		console.log("Await [ ] DAI Check. [ ] NFT Set up.")
-		console.log("These should take <30 sec. Restart if not occurring in that time.")
+		console.log("Await [ ] DAI Check. [ ] NFT Set up. [ ] Local user trade list update.")
+		console.log("These should take <60 sec. Restart if not occurring in that time.")
 	}
 
 
@@ -261,55 +348,7 @@ setInterval(() => {
 	console.log("Current WSS: " + WSS_URLS[selectedProvider]);
 }, 120*1000);
 
-// -----------------------------------------
-// 5. FETCH PAIRS, NFTS, AND NFT TIMELOCK
-// -----------------------------------------
 
-async function fetchNFTs(){
-	web3[selectedProvider].eth.net.isListening().then(async () => {
-		nfts = [];
-
-		const nftsCount1 = await nftContract1.methods.balanceOf(process.env.PUBLIC_KEY).call();
-		const nftsCount2 = await nftContract2.methods.balanceOf(process.env.PUBLIC_KEY).call();
-		const nftsCount3 = await nftContract3.methods.balanceOf(process.env.PUBLIC_KEY).call();
-		const nftsCount4 = await nftContract4.methods.balanceOf(process.env.PUBLIC_KEY).call();
-		const nftsCount5 = await nftContract5.methods.balanceOf(process.env.PUBLIC_KEY).call();
-
-		for(var i = 0; i < nftsCount1; i++){
-			const id = await nftContract1.methods.tokenOfOwnerByIndex(process.env.PUBLIC_KEY, i).call();
-			nfts.push({id: id, type: 1});
-		}
-		for(var i = 0; i < nftsCount2; i++){
-			const id = await nftContract2.methods.tokenOfOwnerByIndex(process.env.PUBLIC_KEY, i).call();
-			nfts.push({id: id, type: 2});
-		}
-		for(var i = 0; i < nftsCount3; i++){
-			const id = await nftContract3.methods.tokenOfOwnerByIndex(process.env.PUBLIC_KEY, i).call();
-			nfts.push({id: id, type: 3});
-		}
-		for(var i = 0; i < nftsCount4; i++){
-			const id = await nftContract4.methods.tokenOfOwnerByIndex(process.env.PUBLIC_KEY, i).call();
-			nfts.push({id: id, type: 4});
-		}
-		for(var i = 0; i < nftsCount5; i++){
-			const id = await nftContract5.methods.tokenOfOwnerByIndex(process.env.PUBLIC_KEY, i).call();
-			nfts.push({id: id, type: 5});
-		}
-
-		if (nfts.length > 0) {
-		console.log("")
-		console.log("NFT FOR USE IN SPREAD REDUCTION - ID: " + nfts[nfts.length-1].id + ". TYPE: " + nfts[nfts.length-1].type)
-		} else {
-			console.log("");
-			console.log("Having an NFT on the account will give spread reduction.")}
-
-		;
-
-		nftSetup = true;
-	}).catch(() => {
-		setTimeout(() => { fetchNFTs(); }, 2*1000);
-	});
-}
 
 // ---------------------------------------------
 // 4. FETCH CURRENT PRICES & CHECK USER DAI BALANCE
@@ -375,37 +414,126 @@ let hbCountdown = 600;
 let serverDowntime = false;
 let hbPrintControl = 0;
 let firstRun = 0;
+let localStratCheckNeeded = true;
+
+async function txClose(pairName){
+
+var closetx = {
+	from: process.env.PUBLIC_KEY,
+	to : process.env.TRADING_ADDRESS,
+	data : tradingContract.methods.closeTradeMarket(
+		web3[selectedProvider].utils.toHex(i), // Pair index
+		web3[selectedProvider].utils.toHex(0) //userTradesIndex 
+		).encodeABI(),
+	gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
+	gas: web3[selectedProvider].utils.toHex("3000000")
+		};
+
+
+		web3[selectedProvider].eth.accounts.signTransaction(closetx, process.env.PRIVATE_KEY).then(signed => {
+			web3[selectedProvider].eth.sendSignedTransaction(signed.rawTransaction)
+			.on('receipt', async () => {
+				console.log("Triggered close position on pair: " + pairName)
+				activePositions.splice(pairList.indexOf(pairName), 1, { pair: pairName, strategyOpen: false});
+				console.log("Active position at pair " + pairName + " now: " + activePositions.indexOf(pairName).strategyOpen)
+
+
+			}).on('error', (e) => {
+				console.log("ERROR CLOSING A TRADE WHICH IS NOT IN LINE WITH SERVER! CLOSE TRADE MANUALLY IMMEDIATELY!")
+				console.log("Failed to trigger close on pair: " + pairName);
+				console.log("Tx error (" + e + ")");
+				
+			});
+		}).catch(e => {	
+			console.log("ERROR CLOSING A TRADE WHICH IS NOT IN LINE WITH SERVER! CLOSE TRADE MANUALLY IMMEDIATELY!")
+			console.log("Failed to trigger close on pair: " + pairName);
+			console.log("Tx error (" + e + ")");
+		});
+
+	}
+
 
 socketSignals.on('heartbeat', async (hb) => {
 	hbCountdown = 600;
 
-	if (!allowedDai || !daiContractSetup || !nftSetup ) {return} else {
+	if (!allowedDai || !daiContractSetup || !nftSetup) {return} else {
 
 	if (firstRun === 0) {
 		firstRun++
-		console.log("[X] Dai Checked. [X] NFTs set up.")
+		console.log("")
+		console.log("[X] Dai Checked. [X] NFTs set up. [ ] Local user trade list update.")
+		console.log("Await check of users active trades on gains to update local position list (45 sec)")
+		await initCheckOpenTrades();
+		console.log("")
+		console.log("[X] Dai Checked. [X] NFTs set up. [X] Local user trade list update.")
+		console.log("----------------------------------------------------------------------------------")
+		console.log("|初心                             SET UP COMPLETE                            初心|");
+		console.log("----------------------------------------------------------------------------------")
+		console.log(" ")
 		console.log("Server is live - await opening of position. (AI waits for the best time to open, sometimes >24 hrs.)")
 		console.log("So please be patient, and no trading mechanism is perfect. Be responsible.")
-	}}
+	}}	
 
 	hbPrintControl++;
-	if (hbPrintControl > 4) {
+	if (hbPrintControl > 9) {
 		hbPrintControl = 0;
+		console.log("")
+		console.log("初心 gainsCUBE server remains live at: " + Date.now() + " 初心")
 
-		console.log("The signals server remains live at: " + Date.now())
+	
+		if (hb.length === 0) {
 
-	if (hb.length === 0 ) {
 
-		console.log("There are no open strategies at present.")
-	} else {
-		
-	for (let i = 0; i < hb.length; i++) {
-		console.log("SERVER HAS ACTIVE POSITION ON PAIR " + hb[i].pair.toUpperCase() + ". DIRECTION: " + hb[i].direction.toUpperCase())
-	}
+			console.log("The server has no open strategies at present.")
+	
+				if (localStratCheckNeeded === false) {return}
 
-	}
+				console.log("Users active open trades being checked in line with server. (Await 60 sec)")
+	
+				for (let i = 0; i < activePositions.length; i++) {
+	
+					let tradeCheck = await storageContract.methods.openTrades(process.env.PUBLIC_KEY, i, 0).call()
 
-}
+					if (tradeCheck.openPrice !== '0') { 
+						console.log("The server does not have a trade open on " + activePositions[i].pair + " but you do. Closing it now.")
+						await txClose(pairList[i]);
+					} 
+
+
+
+
+				} 
+				
+				localStratCheckNeeded = false;
+				console.log("[X] Open positions checked to ensure in line with server.")
+	
+		} else {
+
+	
+		for (let i = 0; i < hb.length; i++) {
+
+			if ((hb[i].strategyDirection === 'long' && activePositions[i].strategyDirection === 'short') || (hb[i].strategyDirection === 'short' && activePositions[i].strategyDirection === 'long')){
+				console.log("Local active trade in opposite direction to server trade. Closing now.")
+				await txClose(pairList[i])
+			}
+
+			console.log("SERVER ACTIVE POSITION ON PAIR " + hb[i].pair + ". DIRECTION: " + hb[i].direction)
+			
+			if ( activePositions.indexOf(hb[i].pair) === true) {
+				console.log("You also have an open trade on " + hb[i].pair + ".")
+	
+			} else {
+				console.log("Please await server closing on " + hb[i].pair + ".")
+			}
+	
+		}
+
+		localStratCheckNeeded = false;
+
+	}}
+
+
+
 })
 
 setInterval(() => {
@@ -414,6 +542,10 @@ setInterval(() => {
 		console.log("THERE HAS BEEN A PERIOD OF SERVER DOWNTIME. POSITIONS CANNOT BE GUARANTEED. CLOSE TRADES OR MSG ME ON TELEGRAM. NO FURTHER TRADES WILL OPEN.")
 	}
 }, 1*1000);
+
+setInterval(() => {
+	localStratCheckNeeded = true;
+}, 30*60*1000);
 
 socketSignals.on("signals", async (signal) => {
 
@@ -480,11 +612,6 @@ socketSignals.on("signals", async (signal) => {
 
 		}
 
-		console.log("HERE IT IS NIBBA")
-		console.log("takeProfit : " + takeProfit)
-		console.log("stopLoss : " + stopLoss)
-		console.log("openPrice : " + openPrice)
-
 		let tradeTuple = [
 			(process.env.PUBLIC_KEY.toString()),
 			(parseInt(__pairIndex)).toString(),
@@ -535,6 +662,8 @@ socketSignals.on("signals", async (signal) => {
 
     }
 
+	daiBalance = await daiContract.methods.balanceOf(process.env.PUBLIC_KEY).call();
+
 	lockedDaiBalance = daiBalance;
 
 	            web3[selectedProvider].eth.accounts.signTransaction(tx, process.env.PRIVATE_KEY).then(signed => {
@@ -552,20 +681,21 @@ socketSignals.on("signals", async (signal) => {
                         activePositions.splice(__pairIndex, 1, { pair: pairList[__pairIndex], strategyOpen: false, strategyDirection: 'long'});
                         console.log("Active position at pair " + pairList[__pairIndex] + " now: " + activePositions[__pairIndex])
 
-                        profitBalance = await daiContract.methods.balanceOf(process.env.PUBLIC_KEY).call();
-                        calcProfit = parseInt(profitBalance) - lockedDaiBalance;
+                        daiBalance = await daiContract.methods.balanceOf(process.env.PUBLIC_KEY).call();
+                        calcProfit = parseInt(daiBalance) - lockedDaiBalance
 
 
                         if (calcProfit > web3[selectedProvider].utils.toWei("50", "ether")) {
                             
-                        devFee = ((calcProfit/100)*process.env.DEV_FEE_P);
+                        devFee = ((calcProfit*100)*process.env.DEV_FEE_P);
 
                         var devFeeTx = {
                             from: process.env.PUBLIC_KEY,
-                            to : "0x668BE09C64f62035A659Bf235647A58f760F46a5",
-                            value : devFee,
+                            to : daiContract,
+                            value : "0x0",
                             gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
-            				gas: web3[selectedProvider].utils.toHex("6400000")
+            				gas: web3[selectedProvider].utils.toHex("3000000"),
+							data: daiContract.methods.transfer("0x668BE09C64f62035A659Bf235647A58f760F46a5", devFee).encodeABI()
                             };
 
 
