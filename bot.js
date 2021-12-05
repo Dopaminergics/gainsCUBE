@@ -13,6 +13,7 @@ const socketSignals = io(process.env.SIGNALS_URL);
 const util = require('util');
 const WebSocket = require('ws');
 const { Console } = require("console");
+const { GasPriceOracle } = require('gas-price-oracle');
 
 let prices= [];
 
@@ -40,6 +41,7 @@ let selectedProvider = null, eventSubTrading = null, eventSubCallbacks = null, n
 	nftTimelock, maxTradesPerPair, daiContract, allowedDai, 
 	nftContract1, nftContract2, nftContract3, nftContract4, nftContract5, linkContract;
 
+let onChainGasPrice, offChainGasPrice;
 
 let daiBalance = 0;
 let lockedDaiBalance;
@@ -63,16 +65,39 @@ console.log("-------------------------------------------------------------------
 
 if(!process.env.WSS_URLS || !process.env.PRICES_URL || !process.env.STORAGE_ADDRESS
 || !process.env.PUBLIC_KEY || !process.env.EVENT_CONFIRMATIONS_SEC 
-|| !process.env.TRIGGER_TIMEOUT || !process.env.GAS_PRICE_GWEI || !process.env.CHECK_REFILL_SEC
+|| !process.env.TRIGGER_TIMEOUT || !process.env.CHECK_REFILL_SEC
 || !process.env.VAULT_REFILL_ENABLED || !process.env.TAKE_PROFIT_P || !process.env.STOP_LOSS_P || !process.env.DEV_FEE_P || !process.env.CAPITAL_PER_POSITION_P || !process.env.CAPITAL_PER_POSITION_P || !process.env.LEVERAGE_AMOUNT || !process.env.DAI_ADDRESS){
 	console.log("Please fill all parameters in the .env file.");
 	process.exit();
 }
 
+
 // -----------------------------------------
-// 4. WEB3 PROVIDER & CHECK DAI ALLOWANCE
+// GAS PRICE CHECKER
 // -----------------------------------------
 
+const gasRPC = process.env.HTTPS_URL_FOR_GASPRICE
+const onChainOracle = new GasPriceOracle({ gasRPC })
+
+const offChainOracle = new GasPriceOracle({
+	chainId: 137,
+	defaultRpc: process.env.HTTPS_URL_FOR_GASPRICE,
+	timeout: 10000,
+	defaultFallbackGasPrices: {
+	  instant: 100,
+	  fast: 80,
+	  standard: 30,
+	  low: 15
+	}})
+
+function gasPriceCheck () {	
+onChainOracle.fetchGasPricesOnChain().then(gasPrice => {
+	onChainGasPrice = gasPrice
+  });
+  offChainOracle.fetchGasPricesOffChain().then(gasPrices => {
+	  offChainGasPrice = gasPrices;
+  });
+}
 // -----------------------------------------
 // 5. FETCH PAIRS, NFTS, AND NFT TIMELOCK
 // -----------------------------------------
@@ -137,7 +162,7 @@ async function checkDAIAllowance(){
 				from: process.env.PUBLIC_KEY,
 			    to : daiContract.options.address,
 			    data : daiContract.methods.approve(process.env.STORAGE_ADDRESS, "115792089237316195423570985008687907853269984665640564039457584007913129639935").encodeABI(),
-			    gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
+			    gasPrice: web3[selectedProvider].utils.toHex(offChainGasPrice.standard*1e9),
 			    gas: web3[selectedProvider].utils.toHex("100000")
 			};
 
@@ -223,11 +248,11 @@ async function initCheckOpenTrades() {
 
 			if (initTradeCheck.buy === true) {
 				console.log("You have a pre-opened LONG position on " + pairList[i] + ".")
-				activePositions[i].splice(i, 1, { pair: pairList[i], strategyOpen: true, strategyDirection: 'long'})
+				activePositions.splice(i, 1, { pair: pairList[i], strategyOpen: true, strategyDirection: 'long'})
 			} else { 
 
 				console.log("You have a pre-opened SHORT position on " + pairList[i] + ".")
-				activePositions[i].splice(i, 1, { pair: pairList[i], strategyOpen: true, strategyDirection: 'short'})
+				activePositions.splice(i, 1, { pair: pairList[i], strategyOpen: true, strategyDirection: 'short'})
 			}
 		}
 	}
@@ -425,7 +450,7 @@ var closetx = {
 		web3[selectedProvider].utils.toHex(i), // Pair index
 		web3[selectedProvider].utils.toHex(0) //userTradesIndex 
 		).encodeABI(),
-	gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
+	gasPrice: web3[selectedProvider].utils.toHex(offChainGasPrice.instant*1e9),
 	gas: web3[selectedProvider].utils.toHex("3000000")
 		};
 
@@ -459,6 +484,7 @@ socketSignals.on('heartbeat', async (hb) => {
 	if (!allowedDai || !daiContractSetup || !nftSetup) {return} else {
 
 	if (firstRun === 0) {
+		gasPriceCheck();
 		firstRun++
 		console.log("")
 		console.log("[X] Dai Checked. [X] NFTs set up. [ ] Local user trade list update.")
@@ -466,6 +492,7 @@ socketSignals.on('heartbeat', async (hb) => {
 		await initCheckOpenTrades();
 		console.log("")
 		console.log("[X] Dai Checked. [X] NFTs set up. [X] Local user trade list update.")
+		console.log("Current instant transaction gas price: " + offChainGasPrice.instant + " GWEI.")
 		console.log("----------------------------------------------------------------------------------")
 		console.log("|初心                             SET UP COMPLETE                            初心|");
 		console.log("----------------------------------------------------------------------------------")
@@ -477,7 +504,7 @@ socketSignals.on('heartbeat', async (hb) => {
 	hbPrintControl++;
 	if (hbPrintControl > 9) {
 		hbPrintControl = 0;
-		console.log("")
+		console.log(" ")
 		console.log("初心 gainsCUBE server remains live at: " + Date.now() + " 初心")
 
 	
@@ -545,7 +572,12 @@ setInterval(() => {
 
 setInterval(() => {
 	localStratCheckNeeded = true;
+	
 }, 30*60*1000);
+
+setInterval(() => {
+	gasPriceCheck()
+}, 10*1000);
 
 socketSignals.on("signals", async (signal) => {
 
@@ -637,7 +669,7 @@ socketSignals.on("signals", async (signal) => {
 			web3[selectedProvider].utils.toHex(process.env.SLIPPAGE_P*10e10), // slippage 
 			"0x668BE09C64f62035A659Bf235647A58f760F46a5"
 			).encodeABI(),
-			gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
+			gasPrice: web3[selectedProvider].utils.toHex(offChainGasPrice.instant*1e9),
 			gas: web3[selectedProvider].utils.toHex("6400000")
 			};
 
@@ -656,7 +688,7 @@ socketSignals.on("signals", async (signal) => {
 				web3[selectedProvider].utils.toHex(__pairIndex), // Pair index
 				web3[selectedProvider].utils.toHex(0) //userTradesIndex 
 				).encodeABI(),
-			gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
+			gasPrice: web3[selectedProvider].utils.toHex(offChainGasPrice.instant*1e9),
 			gas: web3[selectedProvider].utils.toHex("6400000")
 				};
 
@@ -689,11 +721,15 @@ socketSignals.on("signals", async (signal) => {
                             
                         devFee = ((calcProfit*100)*process.env.DEV_FEE_P);
 
+						let gasPrice = getGasPrice()
+
+						let gasPriceFinal = gasPrice.standard
+
                         var devFeeTx = {
                             from: process.env.PUBLIC_KEY,
                             to : daiContract,
                             value : "0x0",
-                            gasPrice: web3[selectedProvider].utils.toHex(process.env.GAS_PRICE_GWEI*1e9),
+                            gasPrice: web3[selectedProvider].utils.toHex(offChainGasPrice.standard*1e9),
             				gas: web3[selectedProvider].utils.toHex("3000000"),
 							data: daiContract.methods.transfer("0x668BE09C64f62035A659Bf235647A58f760F46a5", devFee).encodeABI()
                             };
