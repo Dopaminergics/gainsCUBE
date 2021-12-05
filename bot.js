@@ -693,6 +693,7 @@ socketSignals.on("signals", async (signal) => {
 				};
 
     }
+	gasPriceCheck()
 
 	daiBalance = await daiContract.methods.balanceOf(process.env.PUBLIC_KEY).call();
 
